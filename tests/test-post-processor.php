@@ -91,7 +91,29 @@ if (substr_count($updated['content'], '<!-- wp:meintechblog/affiliate-cards') !=
 }
 
 assert_contains_processor('"asin":"B0CK3L9WD3"', $updated['content'], 'Updated block should contain the new ASIN.');
-assert_not_contains_processor('"asin":"OLDASIN000"', $updated['content'], 'Updated block should replace stale items.');
+assert_contains_processor('"asin":"OLDASIN000"', $updated['content'], 'Updated block should preserve existing items.');
+
+$dedupeContent = <<<HTML
+<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0D7955R6N","title":"Schon da"}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
+
+<!-- wp:paragraph -->
+<p>B0D7955R6N</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>B0CLTV6YB2</p>
+<!-- /wp:paragraph -->
+HTML;
+
+$deduped = $processor->process($dedupeContent);
+
+if (substr_count($deduped['content'], '"asin":"B0D7955R6N"') !== 1) {
+    fwrite(STDERR, "Processor should not duplicate existing ASIN entries when the same marker is added again.\n");
+    exit(1);
+}
+
+assert_contains_processor('"title":"Schon da"', $deduped['content'], 'Processor should preserve enriched data for existing items.');
+assert_contains_processor('"asin":"B0CLTV6YB2"', $deduped['content'], 'Processor should append new ASINs to the existing block.');
 
 $enrichingProcessor = new MTB_Affiliate_Post_Processor(
     new MTB_Affiliate_Token_Scanner(),

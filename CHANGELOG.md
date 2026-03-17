@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- bestehende Affiliate-Karten bleiben beim ASIN-Autoscan erhalten und werden um neue Produkte ergänzt statt überschrieben
+- doppelte ASIN-Marker werden sauber dedupliziert, ohne angereicherte Kartendaten zu verlieren
+
 ## 0.2.1
 
 - speichert Amazon-Titel, Bilder, Ziel-Links und Nutzenzeilen jetzt direkt beim ASIN-Autoscan in den Block
