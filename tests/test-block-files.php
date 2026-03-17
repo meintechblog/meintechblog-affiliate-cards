@@ -32,6 +32,36 @@ if (($config['attributes']['items']['type'] ?? '') !== 'array') {
     exit(1);
 }
 
+if (($config['attributes']['amazonTitle']['type'] ?? '') !== 'string') {
+    fwrite(STDERR, "amazonTitle attribute should be declared as string for editor hydration.\n");
+    exit(1);
+}
+
+if (($config['attributes']['detailUrl']['type'] ?? '') !== 'string') {
+    fwrite(STDERR, "detailUrl attribute should be declared as string for editor hydration.\n");
+    exit(1);
+}
+
+if (($config['attributes']['images']['type'] ?? '') !== 'array') {
+    fwrite(STDERR, "images attribute should be declared as array for image galleries.\n");
+    exit(1);
+}
+
+if (($config['attributes']['selectedImageIndex']['type'] ?? '') !== 'number') {
+    fwrite(STDERR, "selectedImageIndex attribute should be declared as number for image selection.\n");
+    exit(1);
+}
+
+if (($config['attributes']['loadState']['type'] ?? '') !== 'string') {
+    fwrite(STDERR, "loadState attribute should be declared as string for editor fetch status.\n");
+    exit(1);
+}
+
+if (($config['attributes']['loadError']['type'] ?? '') !== 'string') {
+    fwrite(STDERR, "loadError attribute should be declared as string for editor fetch errors.\n");
+    exit(1);
+}
+
 if (($config['usesContext'] ?? []) !== ['postId', 'postType']) {
     fwrite(STDERR, "Block should request postId and postType context for dynamic enrichment.\n");
     exit(1);

@@ -19,6 +19,30 @@
       "type": "array",
       "default": []
     },
+    "amazonTitle": {
+      "type": "string",
+      "default": ""
+    },
+    "detailUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "images": {
+      "type": "array",
+      "default": []
+    },
+    "selectedImageIndex": {
+      "type": "number",
+      "default": 0
+    },
+    "loadState": {
+      "type": "string",
+      "default": "idle"
+    },
+    "loadError": {
+      "type": "string",
+      "default": ""
+    },
     "badgeMode": {
       "type": "string",
       "default": "auto"
