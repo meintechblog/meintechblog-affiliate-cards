@@ -1,0 +1,21 @@
+.mtb-affiliate-cards-editor {
+    border: 1px dashed #e8d7be;
+    padding: 16px;
+    border-radius: 12px;
+    background: #fffdf8;
+}
+
+.mtb-affiliate-cards-editor__item {
+    border: 1px solid #eadbc8;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #ffffff;
+}
+
+.mtb-affiliate-cards-editor__preview {
+    margin: 10px 0 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f8f2e8;
+}
