@@ -48,6 +48,7 @@ final class MTB_Affiliate_Block {
 
     public function render(array $attributes = [], string $content = '', ?WP_Block $block = null): string {
         $items = $attributes['items'] ?? [];
+        $items = $this->apply_persisted_card_attributes($attributes, $items);
         $postContent = '';
         $postId = 0;
         if ($block && isset($block->context['postId']) && function_exists('get_post_field')) {
@@ -73,6 +74,49 @@ final class MTB_Affiliate_Block {
         $ctaLabelForTemplate = $ctaLabel;
         include MTB_AFFILIATE_CARDS_DIR . 'templates/affiliate-cards.php';
         return (string) ob_get_clean();
+    }
+
+    private function apply_persisted_card_attributes(array $attributes, array $items): array {
+        if ($items === [] || ! isset($items[0]) || ! is_array($items[0])) {
+            return $items;
+        }
+
+        $item = $items[0];
+        $asin = strtoupper(trim((string) ($item['asin'] ?? '')));
+        $currentTitle = trim((string) ($item['title'] ?? ''));
+        $isPlaceholderTitle = $currentTitle === '' || strtoupper($currentTitle) === $asin;
+
+        $amazonTitle = trim((string) ($attributes['amazonTitle'] ?? ''));
+        if ($amazonTitle !== '' && $isPlaceholderTitle) {
+            $item['title'] = $amazonTitle;
+        }
+
+        $detailUrl = trim((string) ($attributes['detailUrl'] ?? ''));
+        if ($detailUrl !== '' && trim((string) ($item['detail_url'] ?? '')) === '') {
+            $item['detail_url'] = $detailUrl;
+        }
+
+        $images = array_values(
+            array_filter(
+                is_array($attributes['images'] ?? null) ? $attributes['images'] : [],
+                static fn($value): bool => is_string($value) && trim($value) !== ''
+            )
+        );
+
+        if ($images !== []) {
+            $selectedImageIndex = (int) ($attributes['selectedImageIndex'] ?? 0);
+            if ($selectedImageIndex < 0) {
+                $selectedImageIndex = 0;
+            }
+            if ($selectedImageIndex >= count($images)) {
+                $selectedImageIndex = count($images) - 1;
+            }
+            $item['image_url'] = (string) $images[$selectedImageIndex];
+            $item['images'] = $images;
+        }
+
+        $items[0] = $item;
+        return $items;
     }
 
     private function resolve_items(array $items, int $postId, array $settings, bool $autoShortenTitles): array {
@@ -119,19 +163,31 @@ final class MTB_Affiliate_Block {
             }
 
             $fetched = $mappedByAsin[$asin] ?? [];
-            $title = (string) ($fetched['title'] ?? $item['title'] ?? $asin);
+            $persistedTitle = trim((string) ($item['title'] ?? ''));
+            if ($persistedTitle !== '' && strtoupper($persistedTitle) === strtoupper($asin)) {
+                $persistedTitle = '';
+            }
+            $fetchedTitle = trim((string) ($fetched['title'] ?? ''));
+            $title = $persistedTitle !== '' ? $persistedTitle : ($fetchedTitle !== '' ? $fetchedTitle : $asin);
             if (! empty($item['titleOverride'])) {
                 $title = trim((string) $item['titleOverride']);
             } elseif ($autoShortenTitles) {
                 $title = $this->shortener->shorten($asin, $title);
             }
 
+            $persistedImageUrl = trim((string) ($item['image_url'] ?? ''));
+            $persistedDetailUrl = trim((string) ($item['detail_url'] ?? ''));
+            $persistedBenefit = trim((string) ($item['benefit'] ?? ''));
+            $fetchedImageUrl = trim((string) ($fetched['image_url'] ?? ''));
+            $fetchedDetailUrl = trim((string) ($fetched['detail_url'] ?? ''));
+            $fetchedBenefit = trim((string) ($fetched['benefit'] ?? ''));
+
             $resolved[] = [
                 'asin' => $asin,
                 'title' => $title,
-                'image_url' => (string) ($fetched['image_url'] ?? $item['image_url'] ?? ''),
-                'detail_url' => (string) ($fetched['detail_url'] ?? $item['detail_url'] ?? ('https://www.amazon.de/dp/' . $asin)),
-                'benefit' => (string) ($item['benefit'] ?? $fetched['benefit'] ?? ''),
+                'image_url' => $persistedImageUrl !== '' ? $persistedImageUrl : $fetchedImageUrl,
+                'detail_url' => $persistedDetailUrl !== '' ? $persistedDetailUrl : ($fetchedDetailUrl !== '' ? $fetchedDetailUrl : ('https://www.amazon.de/dp/' . $asin)),
+                'benefit' => $persistedBenefit !== '' ? $persistedBenefit : $fetchedBenefit,
                 'price_text' => $fetched['price_text'] ?? null,
             ];
         }
