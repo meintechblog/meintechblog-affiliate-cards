@@ -98,6 +98,10 @@ Mehr dazu steht in [HOWTO-USE.md](/Users/hulki/codex/meintechblog-affiliate-card
 - Löschen über das WordPress-UI entfernt die Plugin-Dateien
 - [uninstall.php](/Users/hulki/codex/meintechblog-affiliate-cards/uninstall.php) entfernt zusätzlich die Plugin-Option `mtb_affiliate_cards_settings`
 
+## Lizenz
+
+Dieses Repo nutzt die `Energy Community License (ECL-1.0)` in [LICENSE.md](/Users/hulki/codex/meintechblog-affiliate-cards/LICENSE.md), inhaltlich angelehnt an die Lizenz aus [chloepriceless/dvhub](https://github.com/chloepriceless/dvhub) mit auf dieses Projekt angepasster Copyright-Zeile.
+
 ## Repo-Struktur
 
 - `meintechblog-affiliate-cards.php`
