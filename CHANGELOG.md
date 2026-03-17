@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- gibt dem dynamischen Affiliate-Block den nötigen WordPress-Post-Kontext (`postId`, `postType`) für Live-Enrichment neuer Produkte
+- behebt fehlende Titel-, Bild- und Trackingdaten bei frisch erzeugten `amazon:ASIN`-Blocks
+
 ## 0.2.3
 
 - ersetzt das fragile Save-Post-Token-Scannen durch einen expliziten Gutenberg-Editor-Trigger für exakte `amazon:ASIN`-Absätze

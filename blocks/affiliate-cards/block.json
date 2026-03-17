@@ -10,6 +10,10 @@
   "editorScript": "mtb-affiliate-cards-editor",
   "editorStyle": "mtb-affiliate-cards-editor",
   "style": "mtb-affiliate-cards-frontend",
+  "usesContext": [
+    "postId",
+    "postType"
+  ],
   "attributes": {
     "items": {
       "type": "array",

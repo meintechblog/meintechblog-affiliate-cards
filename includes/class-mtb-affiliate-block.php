@@ -53,6 +53,11 @@ final class MTB_Affiliate_Block {
         if ($block && isset($block->context['postId']) && function_exists('get_post_field')) {
             $postId = (int) $block->context['postId'];
             $postContent = (string) get_post_field('post_content', $postId);
+        } elseif (function_exists('get_the_ID') && function_exists('get_post_field')) {
+            $postId = (int) get_the_ID();
+            if ($postId > 0) {
+                $postContent = (string) get_post_field('post_content', $postId);
+            }
         }
 
         $settings = $this->settings->get_all();

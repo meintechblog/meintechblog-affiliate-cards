@@ -24,6 +24,11 @@ if (($config['attributes']['items']['type'] ?? '') !== 'array') {
     exit(1);
 }
 
+if (($config['usesContext'] ?? []) !== ['postId', 'postType']) {
+    fwrite(STDERR, "Block should request postId and postType context for dynamic enrichment.\n");
+    exit(1);
+}
+
 if (($config['supports']['html'] ?? null) !== false) {
     fwrite(STDERR, "Block should keep raw HTML editing disabled.\n");
     exit(1);
