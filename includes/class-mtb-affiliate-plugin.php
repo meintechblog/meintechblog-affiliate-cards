@@ -184,13 +184,8 @@ final class MTB_Affiliate_Plugin {
     }
 
     private function resolve_items_for_save(array $asins, array $settings, object $post): array {
-        $fallbackItems = array_map(
-            static fn(string $asin): array => ['asin' => $asin],
-            $asins
-        );
-
         if ($asins === [] || $settings['client_id'] === '' || $settings['client_secret'] === '') {
-            return $fallbackItems;
+            return [];
         }
 
         try {
@@ -203,7 +198,7 @@ final class MTB_Affiliate_Plugin {
             }
 
             if ($resolvedItems === []) {
-                return $fallbackItems;
+                return [];
             }
 
             $byAsin = [];
@@ -214,14 +209,16 @@ final class MTB_Affiliate_Plugin {
                 }
             }
 
-            return array_map(
-                static function (string $asin) use ($byAsin): array {
-                    return $byAsin[$asin] ?? ['asin' => $asin];
-                },
-                $asins
-            );
+            $orderedResolvedItems = [];
+            foreach ($asins as $asin) {
+                if (isset($byAsin[$asin])) {
+                    $orderedResolvedItems[] = $byAsin[$asin];
+                }
+            }
+
+            return $orderedResolvedItems;
         } catch (Throwable $exception) {
-            return $fallbackItems;
+            return [];
         }
     }
 

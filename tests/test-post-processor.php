@@ -213,6 +213,62 @@ if (substr_count($inlineExistingAdjacent['content'], '"asin":"B0INLINE14"') !== 
 assert_contains_processor('Amazon Titel B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should keep the newer resolved content.');
 assert_not_contains_processor('https://old.example/B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should replace stale detail URLs.');
 
+$inlineResave = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Ich nutze <a href="https://www.amazon.de/dp/B0INLINE16?tag=meintechblog-260317-21">Amazon Titel B0INLINE16 (Affiliate-Link)</a> und <a href="https://www.amazon.de/dp/B0INLINE17?tag=meintechblog-260317-21">Amazon Titel B0INLINE17 (Affiliate-Link)</a> im Setup.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0INLINE16","title":"Amazon Titel B0INLINE16","detail_url":"https://www.amazon.de/dp/B0INLINE16?tag=meintechblog-260317-21"}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
+
+<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0INLINE17","title":"Amazon Titel B0INLINE17","detail_url":"https://www.amazon.de/dp/B0INLINE17?tag=meintechblog-260317-21"}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
+HTML);
+
+if (substr_count($inlineResave['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
+    fwrite(STDERR, "Re-saving an already enriched inline paragraph should not create extra affiliate card blocks.\n");
+    exit(1);
+}
+
+if (substr_count($inlineResave['content'], '"asin":"B0INLINE16"') !== 1 || substr_count($inlineResave['content'], '"asin":"B0INLINE17"') !== 1) {
+    fwrite(STDERR, "Re-saving an already enriched inline paragraph should keep one card per ASIN.\n");
+    exit(1);
+}
+
+$inlinePartialResolverProcessor = new MTB_Affiliate_Post_Processor(
+    new MTB_Affiliate_Token_Scanner(),
+    [],
+    static function (array $asins): array {
+        $items = [];
+        foreach ($asins as $asin) {
+            if ($asin !== 'B0INLINE15') {
+                continue;
+            }
+
+            $items[] = [
+                'asin' => $asin,
+                'title' => 'Amazon Titel ' . $asin,
+                'detail_url' => 'https://www.amazon.de/dp/' . $asin,
+            ];
+        }
+
+        return $items;
+    }
+);
+
+$inlineInvalidUnresolved = $inlinePartialResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Gültig amazon:B0INLINE15 und ungültig amazon:INVALID123 im gleichen Absatz.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+if (substr_count($inlineInvalidUnresolved['content'], '<!-- wp:meintechblog/affiliate-cards') !== 1) {
+    fwrite(STDERR, "Only resolved inline affiliate markers should create affiliate card blocks.\n");
+    exit(1);
+}
+
+assert_contains_processor('Amazon Titel B0INLINE15 (Affiliate-Link)', $inlineInvalidUnresolved['content'], 'Resolved inline markers should still be replaced with linked affiliate text.');
+assert_contains_processor('amazon:INVALID123', $inlineInvalidUnresolved['content'], 'Unresolved inline markers should remain visible in the paragraph.');
+assert_not_contains_processor('"asin":"INVALID123"', $inlineInvalidUnresolved['content'], 'Unresolved inline markers must not create empty affiliate card blocks.');
+
 $firstAffiliatePos = strpos($result['content'], '<!-- wp:meintechblog/affiliate-cards');
 $afterIntroPos = strpos($result['content'], '<p>Vor dem Block.</p>');
 $afterOutroPos = strpos($result['content'], '<p>Nach dem Block.</p>');

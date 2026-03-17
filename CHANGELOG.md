@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.15
+
+- trennt Inline- und Standalone-ASINs im Post-Processor sauber, damit beim erneuten Speichern eines bereits angereicherten Absatzes kein zusätzlicher Sammelblock mehr entsteht
+- hält bestehende Einzel-Cards unter Inline-Absätzen beim Re-Save stabil statt neue doppelte Blocks zu erzeugen
+- ergänzt einen Re-Save-Regressionscheck für bereits verlinkte Absätze mit benachbarten Affiliate-Cards
+
+## 0.2.14
+
+- stoppt asin-only Fallbacks schon im Save-Resolver, damit gemischte Absätze mit gültigen und ungültigen `amazon:ASIN`-Markern nur noch für echte Treffer Cards erzeugen
+- lässt unaufgelöste Produkte beim Speichern komplett aus der Card-Erzeugung heraus, statt leere Platzhalter weiterzureichen
+- ergänzt einen Plugin-Lifecycle-Regressionscheck für partielle Resolver-Ergebnisse
+
+## 0.2.13
+
+- verhindert leere Inline-`Affiliate Card`-Blöcke für `amazon:ASIN`-Marker, wenn Amazon zu einer ASIN keine auflösbaren Produktdaten liefert
+- lässt unaufgelöste Marker im Absatz sichtbar stehen, statt darunter kaputte Platzhalter-Cards zu erzeugen
+- ergänzt einen Regressionstest für gemischte Absätze mit gültigen und ungültigen Inline-Markern
+
 ## 0.2.12
 
 - erweitert den Save-Flow um Inline-Affiliate-Enrichment: `amazon:ASIN` im Fließtext wird zu verlinktem `Titel (Affiliate-Link)` umgeschrieben

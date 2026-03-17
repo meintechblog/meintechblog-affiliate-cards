@@ -27,6 +27,7 @@ final class MTB_Affiliate_Post_Processor {
 
     public function process(string $content): array {
         $asins = [];
+        $standaloneAsins = [];
         $inlineAsins = [];
         $inlinePlaceholders = [];
         $existingAttrs = [];
@@ -49,7 +50,7 @@ final class MTB_Affiliate_Post_Processor {
 
         $processedContent = preg_replace_callback(
             self::PARAGRAPH_PATTERN,
-            static function (array $matches) use (&$asins, &$inlineAsins, &$inlinePlaceholders, &$placeholderInserted, &$inlinePlaceholderIndex): string {
+            static function (array $matches) use (&$asins, &$standaloneAsins, &$inlineAsins, &$inlinePlaceholders, &$placeholderInserted, &$inlinePlaceholderIndex): string {
                 $innerText = trim(strip_tags(html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8')));
                 if (! preg_match(self::TOKEN_PATTERN, $innerText, $tokenMatch)) {
                     $foundInlineAsins = self::extract_inline_asins($matches[1]);
@@ -68,6 +69,7 @@ final class MTB_Affiliate_Post_Processor {
                 }
 
                 $asins[] = $tokenMatch[1];
+                $standaloneAsins[] = $tokenMatch[1];
 
                 if (! $placeholderInserted) {
                     $placeholderInserted = true;
@@ -80,6 +82,7 @@ final class MTB_Affiliate_Post_Processor {
         );
 
         $uniqueAsins = array_values(array_unique($asins));
+        $uniqueStandaloneAsins = array_values(array_unique($standaloneAsins));
         $uniqueInlineAsins = array_values(array_unique($inlineAsins));
 
         if ($uniqueAsins === []) {
@@ -100,17 +103,19 @@ final class MTB_Affiliate_Post_Processor {
 
             if ($inlinePlaceholders !== []) {
                 foreach ($inlinePlaceholders as $placeholder => $asin) {
-                    $item = $inlineMap[$asin] ?? ['asin' => $asin];
+                    $item = $inlineMap[$asin] ?? null;
                     $processedContent = str_replace(
                         $placeholder,
-                        $this->serialize_single_block($item),
+                        is_array($item) ? $this->serialize_single_block($item) : '',
                         $processedContent ?? $content
                     );
                 }
             }
         }
 
-        $block = $this->serialize_block($uniqueAsins, $existingAttrs);
+        $block = $uniqueStandaloneAsins !== []
+            ? $this->serialize_block($uniqueStandaloneAsins, $existingAttrs)
+            : '';
         $finalContent = str_replace(self::PLACEHOLDER, $block, $processedContent ?? $content);
         $finalContent = $this->collapse_adjacent_affiliate_blocks($finalContent);
 

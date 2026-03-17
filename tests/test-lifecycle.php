@@ -153,4 +153,61 @@ assert_same_lifecycle(
     'Save resolver should return items from the successful fallback tag request.'
 );
 
+$partialCalls = [];
+$partialTransport = static function (string $method, string $url, array $headers, ?array $body) use (&$partialCalls): array {
+    if ($url === 'https://api.amazon.co.uk/auth/o2/token') {
+        return [200, ['access_token' => 'token-partial']];
+    }
+
+    if ($url === 'https://creatorsapi.amazon/catalog/v1/getItems') {
+        $partialCalls[] = $body['partner_tag'] ?? $body['partnerTag'] ?? null;
+        return [200, ['itemsResult' => ['items' => [[
+            'asin' => 'B0VALID001',
+            'detailPageURL' => 'https://www.amazon.de/dp/B0VALID001?tag=meintechblog-260317-21',
+            'images' => [],
+            'itemInfo' => [
+                'title' => ['displayValue' => 'Valid Product'],
+            ],
+        ]]]]];
+    }
+
+    return [500, ['message' => 'unexpected']];
+};
+
+$partialClient = new MTB_Affiliate_Amazon_Client(new MTB_Affiliate_Title_Shortener(), $partialTransport);
+$pluginForPartial = $pluginReflection->newInstanceWithoutConstructor();
+$amazonClientProperty->setValue($pluginForPartial, $partialClient);
+
+$partiallyResolved = $resolveMethod->invoke(
+    $pluginForPartial,
+    ['B0VALID001', 'INVALID123'],
+    [
+        'client_id' => 'client-id',
+        'client_secret' => 'client-secret',
+        'marketplace' => 'www.amazon.de',
+    ],
+    (object) [
+        'post_date' => '2026-03-17T10:38:49',
+        'post_content' => '<p>Inline marker mix.</p>',
+    ]
+);
+
+assert_same_lifecycle(
+    ['meintechblog-260317-21'],
+    $partialCalls,
+    'Save resolver should still try the derived tag for mixed valid and invalid inline markers.'
+);
+
+assert_same_lifecycle(
+    1,
+    count($partiallyResolved),
+    'Save resolver should only return resolved items and never emit asin-only placeholders for unresolved markers.'
+);
+
+assert_same_lifecycle(
+    'B0VALID001',
+    $partiallyResolved[0]['asin'] ?? null,
+    'Save resolver should keep the resolved item in output order.'
+);
+
 echo "ok\n";
