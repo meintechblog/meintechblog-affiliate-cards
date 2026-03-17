@@ -163,13 +163,13 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'Badge über dem Bi
     exit(1);
 }
 
-if (! str_contains((string) file_get_contents($indexJsPath), 'Kurztitel überschreiben')) {
-    fwrite(STDERR, "Editor should provide an in-block short title override field.\n");
+if (! str_contains((string) file_get_contents($indexJsPath), "label: 'Titel'")) {
+    fwrite(STDERR, "Editor should label the visible title field simply as Titel.\n");
     exit(1);
 }
 
-if (! str_contains((string) file_get_contents($indexJsPath), 'Nutzenzeile')) {
-    fwrite(STDERR, "Editor should provide an in-block benefit line field.\n");
+if (! str_contains((string) file_get_contents($indexJsPath), "label: 'Beschreibung'")) {
+    fwrite(STDERR, "Editor should label the visible benefit field simply as Beschreibung.\n");
     exit(1);
 }
 
@@ -213,6 +213,16 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__asin-input')) {
+    fwrite(STDERR, "Editor should expose the ASIN as an inline editable card field.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), "label: 'ASIN'")) {
+    fwrite(STDERR, "Editor should label the inline ASIN field clearly as ASIN.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading')) {
     fwrite(STDERR, "Editor should render loading state inside the card shell.\n");
     exit(1);
@@ -234,12 +244,7 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
 }
 
 if (! str_contains((string) file_get_contents($indexJsPath), "label: i18n.__( 'Produkt-ASIN'")) {
-    fwrite(STDERR, "Editor inspector should expose the ASIN as a technical setting.\n");
-    exit(1);
-}
-
-if (str_contains((string) file_get_contents($indexJsPath), "label: 'ASIN'")) {
-    fwrite(STDERR, "Editor should no longer render the ASIN as a prominent inline field.\n");
+    fwrite(STDERR, "Editor inspector should keep the ASIN as a technical fallback setting.\n");
     exit(1);
 }
 
@@ -263,6 +268,31 @@ if (! str_contains((string) file_get_contents($indexJsPath), "updateItem( 'title
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__cta-link')) {
+    fwrite(STDERR, "Editor should render the CTA as a real link preview.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), "href: detailUrl || '#'")) {
+    fwrite(STDERR, "Editor CTA should point directly to the Amazon product URL.\n");
+    exit(1);
+}
+
+if (str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__preview')) {
+    fwrite(STDERR, "Editor should not duplicate title and description below the fields.\n");
+    exit(1);
+}
+
+if (str_contains((string) file_get_contents($indexJsPath), 'Kurztitel überschreiben')) {
+    fwrite(STDERR, "Old Kurztitel überschreiben label should be removed.\n");
+    exit(1);
+}
+
+if (str_contains((string) file_get_contents($indexJsPath), 'Nutzenzeile')) {
+    fwrite(STDERR, "Old Nutzenzeile label should be removed.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($editorCssPath), 'grid-template-columns: 220px minmax(0, 1fr);')) {
     fwrite(STDERR, "Editor CSS should mirror the two-column live card layout.\n");
     exit(1);
@@ -280,6 +310,16 @@ if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-c
 
 if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__state--error')) {
     fwrite(STDERR, "Editor CSS should style the error state in-card.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__asin-input')) {
+    fwrite(STDERR, "Editor CSS should style the inline ASIN field.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__cta-link')) {
+    fwrite(STDERR, "Editor CSS should style the CTA link like the frontend button.\n");
     exit(1);
 }
 

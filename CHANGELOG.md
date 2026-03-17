@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.10
+
+- zieht die editierbare ASIN als zentrales Feld ganz nach oben in die Editor-Card
+- benennt die Inline-Felder auf `Titel` und `Beschreibung` um und entfernt die doppelte Textvorschau darunter
+- rendert den unteren CTA im Editor als echten Amazon-Link und poliert die Bildnavigation optisch auf
+
 ## 0.2.9
 
 - zeigt die ASIN jetzt sichtbar direkt in der `Affiliate Card` im Editor

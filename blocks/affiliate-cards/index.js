@@ -314,8 +314,8 @@
         const baseTitle = attributes.amazonTitle || item.title || item.asin || 'Neue Karte';
         const previewTitle = item.titleOverride || baseTitle;
         const editableTitle = item.titleOverride || previewTitle;
-        const previewBenefit = item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.';
         const ctaLabel = attributes.ctaLabel || 'Preis auf Amazon checken';
+        const detailUrl = item.detail_url || attributes.detailUrl || '';
         const isLoading = attributes.loadState === 'loading';
         const hasError = attributes.loadState === 'error';
 
@@ -416,17 +416,29 @@
                     { className: 'mtb-affiliate-cards-editor__warning' },
                     'Dieser Alt-Block enthält mehrere Produkte. Bitte in einzelne Affiliate Cards aufteilen.'
                 ),
-                el(
-                    'div',
-                    { className: 'mtb-affiliate-cards-editor__item' },
                     el(
                         'div',
-                        { className: 'mtb-affiliate-cards-editor__card' },
+                        { className: 'mtb-affiliate-cards-editor__item' },
                         el(
                             'div',
-                            { className: 'mtb-affiliate-cards-editor__badge-area' },
-                            el( SelectControl, {
-                                label: 'Badge über dem Bild',
+                            { className: 'mtb-affiliate-cards-editor__card' },
+                            el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__head' },
+                                el( TextControl, {
+                                    label: 'ASIN',
+                                    className: 'mtb-affiliate-cards-editor__asin-input',
+                                    value: item.asin || '',
+                                    onChange: function ( value ) {
+                                        updateItem( 'asin', value.trim().toUpperCase() );
+                                    }
+                                } )
+                            ),
+                            el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__badge-area' },
+                                el( SelectControl, {
+                                    label: 'Badge über dem Bild',
                                 value: attributes.badgeMode || 'auto',
                                 options: BADGE_OPTIONS,
                                 onChange: updateBadgeMode
@@ -470,7 +482,7 @@
                             'div',
                             { className: 'mtb-affiliate-cards-editor__body-area' },
                             el( TextControl, {
-                                label: 'Kurztitel überschreiben',
+                                label: 'Titel',
                                 className: 'mtb-affiliate-cards-editor__title-input',
                                 value: editableTitle,
                                 onChange: function ( value ) {
@@ -478,20 +490,13 @@
                                 }
                             } ),
                             el( TextareaControl, {
-                                label: 'Nutzenzeile',
+                                label: 'Beschreibung',
                                 className: 'mtb-affiliate-cards-editor__benefit-input',
                                 value: item.benefit || '',
                                 onChange: function ( value ) {
                                     updateItem( 'benefit', value );
                                 }
                             } ),
-                            el(
-                                'div',
-                                { className: 'mtb-affiliate-cards-editor__preview' },
-                                el( 'strong', {}, previewTitle ),
-                                el( 'p', {}, previewBenefit ),
-                                el( 'div', { className: 'mtb-affiliate-cards-editor__asin' }, 'ASIN: ' + ( item.asin || 'noch nicht gesetzt' ) )
-                            ),
                             isLoading && el(
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading' },
@@ -510,8 +515,13 @@
                                 )
                             ),
                             el(
-                                'div',
-                                { className: 'mtb-affiliate-cards-editor__cta-preview' },
+                                'a',
+                                {
+                                    className: 'mtb-affiliate-cards-editor__cta-preview mtb-affiliate-cards-editor__cta-link',
+                                    href: detailUrl || '#',
+                                    target: '_blank',
+                                    rel: 'nofollow noopener sponsored'
+                                },
                                 el( 'span', { className: 'mtb-affiliate-cards-editor__cta-label' }, ctaLabel ),
                                 el( 'span', { className: 'mtb-affiliate-cards-editor__cta-meta' }, 'Affiliate-Link' )
                             )
