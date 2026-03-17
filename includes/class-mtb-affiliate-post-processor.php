@@ -10,14 +10,17 @@ final class MTB_Affiliate_Post_Processor {
 
     private MTB_Affiliate_Token_Scanner $scanner;
     private array $defaults;
+    /** @var null|callable */
+    private $itemResolver;
 
-    public function __construct(?MTB_Affiliate_Token_Scanner $scanner = null, array $defaults = []) {
+    public function __construct(?MTB_Affiliate_Token_Scanner $scanner = null, array $defaults = [], ?callable $itemResolver = null) {
         $this->scanner = $scanner ?? new MTB_Affiliate_Token_Scanner();
         $this->defaults = array_merge([
             'badgeMode' => 'auto',
             'ctaLabel' => 'Preis auf Amazon checken',
             'autoShortenTitles' => true,
         ], $defaults);
+        $this->itemResolver = $itemResolver;
     }
 
     public function process(string $content): array {
@@ -76,11 +79,20 @@ final class MTB_Affiliate_Post_Processor {
     }
 
     private function serialize_block(array $asins): string {
+        $items = array_map(
+            static fn(string $asin): array => ['asin' => $asin],
+            $asins
+        );
+
+        if (is_callable($this->itemResolver)) {
+            $resolvedItems = ($this->itemResolver)($asins);
+            if (is_array($resolvedItems) && $resolvedItems !== []) {
+                $items = $resolvedItems;
+            }
+        }
+
         $attrs = [
-            'items' => array_map(
-                static fn(string $asin): array => ['asin' => $asin],
-                $asins
-            ),
+            'items' => $items,
             'badgeMode' => $this->defaults['badgeMode'],
             'ctaLabel' => $this->defaults['ctaLabel'],
             'autoShortenTitles' => (bool) $this->defaults['autoShortenTitles'],

@@ -93,4 +93,35 @@ if (substr_count($updated['content'], '<!-- wp:meintechblog/affiliate-cards') !=
 assert_contains_processor('"asin":"B0CK3L9WD3"', $updated['content'], 'Updated block should contain the new ASIN.');
 assert_not_contains_processor('"asin":"OLDASIN000"', $updated['content'], 'Updated block should replace stale items.');
 
+$enrichingProcessor = new MTB_Affiliate_Post_Processor(
+    new MTB_Affiliate_Token_Scanner(),
+    [
+        'badgeMode' => 'video',
+        'ctaLabel' => 'Preis auf Amazon checken',
+        'autoShortenTitles' => true,
+    ],
+    static function (array $asins): array {
+        return [
+            [
+                'asin' => $asins[0],
+                'title' => 'USB-C Tester Messgerät',
+                'image_url' => 'https://images.example/tester.jpg',
+                'detail_url' => 'https://www.amazon.de/dp/B0DF2KFDC8?tag=meintechblog-260317-21',
+                'benefit' => 'USB-C Stromwerte direkt prüfen',
+            ],
+        ];
+    }
+);
+
+$enriched = $enrichingProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>B0DF2KFDC8</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor('"title":"USB-C Tester Messgerät"', $enriched['content'], 'Processor should serialize resolved item titles.');
+assert_contains_processor('"image_url":"https://images.example/tester.jpg"', $enriched['content'], 'Processor should serialize resolved item images.');
+assert_contains_processor('"benefit":"USB-C Stromwerte direkt prüfen"', $enriched['content'], 'Processor should serialize resolved benefit lines.');
+assert_contains_processor('"badgeMode":"video"', $enriched['content'], 'Processor should keep configured badge mode.');
+
 echo "ok\n";

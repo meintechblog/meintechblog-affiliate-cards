@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- speichert Amazon-Titel, Bilder, Ziel-Links und Nutzenzeilen jetzt direkt beim ASIN-Autoscan in den Block
+- reduziert die Abhängigkeit von Live-Amazon-Requests im Frontend deutlich
+
 ## 0.2.0
 
 - persistente Plugin-Settings für CTA, Badge-Modus, Marketplace und Amazon-Credentials

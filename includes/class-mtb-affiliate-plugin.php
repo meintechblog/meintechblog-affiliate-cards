@@ -151,11 +151,17 @@ final class MTB_Affiliate_Plugin {
         }
 
         $settings = $this->settings->get_all();
-        $processor = new MTB_Affiliate_Post_Processor(null, [
-            'badgeMode' => $settings['badge_mode'],
-            'ctaLabel' => $settings['cta_label'],
-            'autoShortenTitles' => $settings['auto_shorten_titles'],
-        ]);
+        $processor = new MTB_Affiliate_Post_Processor(
+            null,
+            [
+                'badgeMode' => $settings['badge_mode'],
+                'ctaLabel' => $settings['cta_label'],
+                'autoShortenTitles' => $settings['auto_shorten_titles'],
+            ],
+            function (array $asins) use ($settings, $post): array {
+                return $this->resolve_items_for_save($asins, $settings, $post);
+            }
+        );
 
         $processed = $processor->process((string) $post->post_content);
         if ($processed['asins'] === [] || $processed['content'] === (string) $post->post_content) {
@@ -170,5 +176,43 @@ final class MTB_Affiliate_Plugin {
         ]);
 
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+    }
+
+    private function resolve_items_for_save(array $asins, array $settings, object $post): array {
+        $fallbackItems = array_map(
+            static fn(string $asin): array => ['asin' => $asin],
+            $asins
+        );
+
+        if ($asins === [] || $settings['client_id'] === '' || $settings['client_secret'] === '') {
+            return $fallbackItems;
+        }
+
+        try {
+            $partnerTag = $this->amazonClient->derive_partner_tag((string) ($post->post_date ?? ''));
+            $resolvedItems = $this->amazonClient->get_items($asins, [
+                'client_id' => $settings['client_id'],
+                'client_secret' => $settings['client_secret'],
+                'marketplace' => $settings['marketplace'],
+                'partner_tag' => $partnerTag,
+            ]);
+
+            $byAsin = [];
+            foreach ($resolvedItems as $item) {
+                $asin = trim((string) ($item['asin'] ?? ''));
+                if ($asin !== '') {
+                    $byAsin[$asin] = $item;
+                }
+            }
+
+            return array_map(
+                static function (string $asin) use ($byAsin): array {
+                    return $byAsin[$asin] ?? ['asin' => $asin];
+                },
+                $asins
+            );
+        } catch (Throwable $exception) {
+            return $fallbackItems;
+        }
     }
 }
