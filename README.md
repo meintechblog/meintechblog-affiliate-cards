@@ -57,6 +57,41 @@ Dieses ZIP kannst du normal über `Plugins -> Installieren -> Plugin hochladen` 
 
 Alternativ kann der komplette Repo-Inhalt unter `wp-content/plugins/meintechblog-affiliate-cards/` liegen. WordPress erkennt das Plugin über [meintechblog-affiliate-cards.php](/Users/hulki/codex/meintechblog-affiliate-cards/meintechblog-affiliate-cards.php).
 
+## How to use
+
+Die kurze Version:
+
+1. Plugin in WordPress aktivieren
+2. Unter `Einstellungen -> Affiliate Cards` die Amazon-Credentials eintragen und speichern
+3. Einen Beitrag im Block-Editor öffnen
+4. In einen eigenen Absatz nur eine ASIN schreiben, zum Beispiel `B0D7955R6N`
+5. Beitrag speichern
+6. Das Plugin entfernt diesen Marker-Absatz und setzt an genau dieser Stelle automatisch den `Affiliate Cards`-Block ein
+
+### So testest du es am einfachsten
+
+1. Lege einen Testbeitrag oder Entwurf an
+2. Schreibe einen normalen Absatz
+3. Füge darunter einen neuen Absatz ein, der nur aus `B0D7955R6N` besteht
+4. Speichere den Beitrag
+5. Prüfe, ob der ASIN-Absatz verschwunden ist und stattdessen eine Affiliate-Karte erscheint
+6. Öffne die Vorschau und klicke auf Bild oder Button
+7. Prüfe, ob du auf die passende Amazon-Produktseite mit Tracking-Ziel kommst
+
+### Wichtige Regel
+
+Die automatische Erkennung greift nur, wenn die ASIN allein in einem eigenen Absatz steht.
+
+- funktioniert: `B0D7955R6N`
+- funktioniert auch: `amazon:B0D7955R6N`
+- funktioniert nicht: `Ich nutze B0D7955R6N im Setup`
+
+### Manuelle Nutzung
+
+Du kannst den `Affiliate Cards`-Block auch direkt im Editor einfügen und Produkte dort pflegen.
+
+Mehr dazu steht in [HOWTO-USE.md](/Users/hulki/codex/meintechblog-affiliate-cards/docs/HOWTO-USE.md) und [EDITOR-WORKFLOW.md](/Users/hulki/codex/meintechblog-affiliate-cards/docs/EDITOR-WORKFLOW.md).
+
 ## Deinstallation
 
 - Deaktivieren wie jedes normale Plugin über das WordPress-UI
