@@ -38,6 +38,15 @@ $transport = static function (string $method, string $url, array $headers, ?arra
                             'images' => [
                                 'primary' => [
                                     'large' => ['url' => 'https://images.example/tester.jpg'],
+                                    'medium' => ['url' => 'https://images.example/tester-medium.jpg'],
+                                ],
+                                'variants' => [
+                                    [
+                                        'large' => ['url' => 'https://images.example/tester-side.jpg'],
+                                    ],
+                                    [
+                                        'medium' => ['url' => 'https://images.example/tester-back.jpg'],
+                                    ],
                                 ],
                             ],
                             'itemInfo' => [
@@ -95,6 +104,16 @@ assert_same_amazon(['B0DF2KFDC8'], $calls[1]['body']['itemIds'], 'Catalog reques
 assert_same_amazon('USB-C Tester Messgerät', $items[0]['title'], 'Client should shorten the Amazon title to the live display title.');
 assert_same_amazon('USB-C Stromwerte direkt prüfen', $items[0]['benefit'], 'Client should attach the known benefit line when available.');
 assert_same_amazon('https://images.example/tester.jpg', $items[0]['image_url'], 'Client should expose the primary image URL.');
+assert_same_amazon(
+    [
+        'https://images.example/tester.jpg',
+        'https://images.example/tester-medium.jpg',
+        'https://images.example/tester-side.jpg',
+        'https://images.example/tester-back.jpg',
+    ],
+    $items[0]['images'] ?? [],
+    'Client should expose an ordered gallery of available image URLs.'
+);
 assert_same_amazon('https://www.amazon.de/dp/B0DF2KFDC8?tag=meintechblog-260317-21', $items[0]['detail_url'], 'Client should expose the detail URL.');
 assert_same_amazon('19,99 EUR', $items[0]['price_text'], 'Client should normalize the price field.');
 

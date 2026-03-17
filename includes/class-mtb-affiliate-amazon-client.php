@@ -67,6 +67,9 @@ final class MTB_Affiliate_Amazon_Client {
                     'images.primary.large',
                     'images.primary.medium',
                     'images.primary.small',
+                    'images.variants.large',
+                    'images.variants.medium',
+                    'images.variants.small',
                     'itemInfo.title',
                     'offersV2.listings.price',
                 ],
@@ -110,7 +113,8 @@ final class MTB_Affiliate_Amazon_Client {
     private function map_item(array $item): array {
         $asin = (string) ($item['asin'] ?? '');
         $title = (string) ($item['itemInfo']['title']['displayValue'] ?? $asin);
-        $imageUrl = $this->resolve_image_url($item['images']['primary'] ?? []);
+        $images = $this->resolve_image_urls($item['images'] ?? []);
+        $imageUrl = $images[0] ?? '';
         $detailUrl = (string) ($item['detailPageURL'] ?? ('https://www.amazon.de/dp/' . $asin));
         $priceText = $this->normalize_price($item['offersV2']['listings'] ?? []);
 
@@ -118,21 +122,42 @@ final class MTB_Affiliate_Amazon_Client {
             'asin' => $asin,
             'title' => $this->shortener->shorten($asin, $title),
             'image_url' => $imageUrl,
+            'images' => $images,
             'detail_url' => $detailUrl,
             'price_text' => $priceText,
             'benefit' => self::BENEFIT_OVERRIDES[$asin] ?? '',
         ];
     }
 
-    private function resolve_image_url(array $primaryImages): string {
+    private function resolve_image_urls(array $images): array {
+        $orderedUrls = [];
+        $seen = [];
+
+        $append = static function ($url) use (&$orderedUrls, &$seen): void {
+            if (! is_string($url) || $url === '' || isset($seen[$url])) {
+                return;
+            }
+            $seen[$url] = true;
+            $orderedUrls[] = $url;
+        };
+
         foreach (['large', 'medium', 'small'] as $size) {
-            $url = $primaryImages[$size]['url'] ?? '';
-            if (is_string($url) && $url !== '') {
-                return $url;
+            $append($images['primary'][$size]['url'] ?? '');
+        }
+
+        $variants = $images['variants'] ?? [];
+        if (is_array($variants)) {
+            foreach ($variants as $variant) {
+                if (! is_array($variant)) {
+                    continue;
+                }
+                foreach (['large', 'medium', 'small'] as $size) {
+                    $append($variant[$size]['url'] ?? '');
+                }
             }
         }
 
-        return '';
+        return $orderedUrls;
     }
 
     private function normalize_price(array $listings): ?string {
