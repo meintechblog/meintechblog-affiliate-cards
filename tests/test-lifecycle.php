@@ -4,9 +4,19 @@ declare(strict_types=1);
 
 $GLOBALS['mtb_actions'] = [];
 $GLOBALS['mtb_deleted_options'] = [];
+$GLOBALS['mtb_rest_routes'] = [];
 
 function add_action(string $hook, $callback): void {
     $GLOBALS['mtb_actions'][$hook][] = $callback;
+}
+
+function register_rest_route(string $namespace, string $route, array $args): bool {
+    $GLOBALS['mtb_rest_routes'][] = [
+        'namespace' => $namespace,
+        'route' => $route,
+        'args' => $args,
+    ];
+    return true;
 }
 
 function delete_option(string $option): bool {
@@ -36,7 +46,24 @@ MTB_Affiliate_Plugin::instance()->boot();
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_menu']), 'Plugin should register the settings page hook.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['init']), 'Plugin should register init hooks.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_init']), 'Plugin should register admin_init for settings.');
+assert_true_lifecycle(isset($GLOBALS['mtb_actions']['rest_api_init']), 'Plugin should register REST API hydration wiring.');
 assert_true_lifecycle(! isset($GLOBALS['mtb_actions']['save_post']), 'Plugin should no longer register save_post for token autoscan processing.');
+
+foreach ($GLOBALS['mtb_actions']['rest_api_init'] as $restCallback) {
+    if (is_callable($restCallback)) {
+        $restCallback();
+    }
+}
+
+$routeFound = false;
+foreach ($GLOBALS['mtb_rest_routes'] as $route) {
+    if (($route['namespace'] ?? '') === 'mtb-affiliate-cards/v1' && ($route['route'] ?? '') === '/item') {
+        $routeFound = true;
+        break;
+    }
+}
+
+assert_true_lifecycle($routeFound, 'REST hydration endpoint /mtb-affiliate-cards/v1/item should be registered.');
 
 define('WP_UNINSTALL_PLUGIN', true);
 require dirname(__DIR__) . '/uninstall.php';

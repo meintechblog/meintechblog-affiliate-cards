@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/class-mtb-affiliate-rest-controller.php';
+
 final class MTB_Affiliate_Plugin {
     private static ?MTB_Affiliate_Plugin $instance = null;
 
     private MTB_Affiliate_Settings $settings;
     private MTB_Affiliate_Block $block;
     private MTB_Affiliate_Amazon_Client $amazonClient;
+    private MTB_Affiliate_Rest_Controller $restController;
 
     private function __construct() {
         $this->settings = new MTB_Affiliate_Settings();
         $this->amazonClient = new MTB_Affiliate_Amazon_Client();
         $this->block = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
+        $this->restController = new MTB_Affiliate_Rest_Controller($this->settings, $this->amazonClient);
     }
 
     public static function instance(): MTB_Affiliate_Plugin {
@@ -32,6 +36,7 @@ final class MTB_Affiliate_Plugin {
         add_action('admin_init', [$this, 'register_settings']);
         add_action('init', [$this, 'register_assets']);
         add_action('init', [$this->block, 'register']);
+        add_action('rest_api_init', [$this->restController, 'register_routes']);
     }
 
     public static function activate(): void {
