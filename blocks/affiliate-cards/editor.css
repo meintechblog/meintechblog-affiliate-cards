@@ -19,3 +19,44 @@
     border-radius: 8px;
     background: #f8f2e8;
 }
+
+.mtb-affiliate-cards-editor__status {
+    margin: 8px 0 10px;
+    color: #5d513f;
+}
+
+.mtb-affiliate-cards-editor__warning {
+    margin: 8px 0 10px;
+    color: #9a2b2b;
+}
+
+.mtb-affiliate-cards-editor__image {
+    margin: 8px 0 12px;
+    border: 1px solid #eadbc8;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fff8ea;
+}
+
+.mtb-affiliate-cards-editor__image-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.mtb-affiliate-cards-editor__image-index {
+    font-size: 12px;
+    font-weight: 600;
+    color: #635847;
+}
+
+.mtb-affiliate-cards-editor__image img {
+    display: block;
+    width: 100%;
+    max-height: 160px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #ffffff;
+}

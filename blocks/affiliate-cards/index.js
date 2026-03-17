@@ -11,6 +11,11 @@
     const Button = components.Button;
     const TOKEN_PATTERN = /^amazon:([A-Z0-9]{10})$/;
     const HYDRATION_ENDPOINT = 'mtb-affiliate-cards/v1/item';
+    const BADGE_OPTIONS = [
+        { label: 'Automatisch', value: 'auto' },
+        { label: 'Im Video verwendet', value: 'video' },
+        { label: 'Passend zu diesem Setup', value: 'setup' }
+    ];
     let isHandlingTokenReplacement = false;
 
     function normalizeParagraphContent( content ) {
@@ -294,11 +299,69 @@
         const items = attributes.items || [];
         const item = items[ 0 ] || { asin: '', benefit: '', titleOverride: '' };
         const blockProps = useBlockProps( { className: 'mtb-affiliate-cards-editor' } );
+        const images = Array.isArray( attributes.images ) && attributes.images.length
+            ? attributes.images
+            : ( item.image_url ? [ item.image_url ] : [] );
+        const maxImageIndex = images.length > 0 ? images.length - 1 : 0;
+        const selectedImageIndex = Math.max(
+            0,
+            Math.min(
+                maxImageIndex,
+                Number.isFinite( attributes.selectedImageIndex ) ? attributes.selectedImageIndex : 0
+            )
+        );
+        const activeImageUrl = images[ selectedImageIndex ] || item.image_url || '';
 
         function updateItem( key, value ) {
             props.setAttributes( {
                 items: [ Object.assign( {}, item, { [ key ]: value } ) ]
             } );
+        }
+
+        function updateBadgeMode( value ) {
+            props.setAttributes( { badgeMode: value } );
+        }
+
+        function selectImage( nextIndex ) {
+            if ( ! images.length ) {
+                return;
+            }
+
+            const normalizedIndex = ( nextIndex + images.length ) % images.length;
+            props.setAttributes( {
+                selectedImageIndex: normalizedIndex,
+                images: images,
+                items: [ Object.assign( {}, item, { image_url: images[ normalizedIndex ] || item.image_url || '' } ) ]
+            } );
+        }
+
+        function retryHydration() {
+            if (
+                ! window.wp ||
+                ! window.wp.data ||
+                ! window.wp.data.select ||
+                ! window.wp.data.dispatch
+            ) {
+                return;
+            }
+
+            const asin = item.asin ? String( item.asin ).trim().toUpperCase() : '';
+            if ( ! asin ) {
+                return;
+            }
+
+            const editorSelect = window.wp.data.select( 'core/block-editor' );
+            const editorDispatch = window.wp.data.dispatch( 'core/block-editor' );
+            const postSelect = window.wp.data.select( 'core/editor' );
+
+            props.setAttributes( { loadState: 'loading', loadError: '' } );
+            hydrateAffiliateBlock(
+                editorSelect,
+                editorDispatch,
+                props.clientId,
+                asin,
+                postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0
+            );
         }
 
         return el(
@@ -313,14 +376,8 @@
                     el( SelectControl, {
                         label: i18n.__( 'Badge-Modus', 'meintechblog-affiliate-cards' ),
                         value: attributes.badgeMode || 'auto',
-                        options: [
-                            { label: 'Automatisch', value: 'auto' },
-                            { label: 'Immer Im Video verwendet', value: 'video' },
-                            { label: 'Immer Passend zu diesem Setup', value: 'setup' }
-                        ],
-                        onChange: function ( value ) {
-                            props.setAttributes( { badgeMode: value } );
-                        }
+                        options: BADGE_OPTIONS,
+                        onChange: updateBadgeMode
                     } ),
                     el( TextControl, {
                         label: i18n.__( 'CTA-Text', 'meintechblog-affiliate-cards' ),
@@ -345,6 +402,11 @@
                     { className: 'mtb-affiliate-cards-editor__warning' },
                     attributes.loadError || 'Produktdaten konnten nicht geladen werden.'
                 ),
+                attributes.loadState === 'error' && el(
+                    Button,
+                    { isSecondary: true, onClick: retryHydration },
+                    'Produktdaten neu laden'
+                ),
                 items.length > 1 && el(
                     'p',
                     { className: 'mtb-affiliate-cards-editor__warning' },
@@ -353,6 +415,12 @@
                 el(
                     'div',
                     { className: 'mtb-affiliate-cards-editor__item' },
+                    el( SelectControl, {
+                        label: 'Badge über dem Bild',
+                        value: attributes.badgeMode || 'auto',
+                        options: BADGE_OPTIONS,
+                        onChange: updateBadgeMode
+                    } ),
                     el( TextControl, {
                         label: 'ASIN',
                         value: item.asin || '',
@@ -374,6 +442,26 @@
                             updateItem( 'benefit', value );
                         }
                     } ),
+                    images.length > 0 && el(
+                        'div',
+                        { className: 'mtb-affiliate-cards-editor__image' },
+                        el(
+                            'div',
+                            { className: 'mtb-affiliate-cards-editor__image-controls' },
+                            el(
+                                Button,
+                                { isSecondary: true, onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
+                                'Bild zurück'
+                            ),
+                            el( 'span', { className: 'mtb-affiliate-cards-editor__image-index' }, 'Bild ' + ( selectedImageIndex + 1 ) + ' / ' + images.length ),
+                            el(
+                                Button,
+                                { isSecondary: true, onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
+                                'Bild weiter'
+                            )
+                        ),
+                        el( 'img', { src: activeImageUrl, alt: item.titleOverride || attributes.amazonTitle || item.asin || 'Affiliate Card' } )
+                    ),
                     el(
                         'div',
                         { className: 'mtb-affiliate-cards-editor__preview' },

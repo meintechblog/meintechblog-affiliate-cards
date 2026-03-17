@@ -157,6 +157,31 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'currentItem.title 
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'Badge über dem Bild')) {
+    fwrite(STDERR, "Editor should provide an in-block badge dropdown control.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'Kurztitel überschreiben')) {
+    fwrite(STDERR, "Editor should provide an in-block short title override field.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'Nutzenzeile')) {
+    fwrite(STDERR, "Editor should provide an in-block benefit line field.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'Bild zurück') || ! str_contains((string) file_get_contents($indexJsPath), 'Bild weiter')) {
+    fwrite(STDERR, "Editor should provide left/right controls for image selection.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'Produktdaten neu laden')) {
+    fwrite(STDERR, "Editor should provide a retry action for hydration errors.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($templatePath), 'mtb-aff-card')) {
     fwrite(STDERR, "Template should render affiliate card markup.\n");
     exit(1);
