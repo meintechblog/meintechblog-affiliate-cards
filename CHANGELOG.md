@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.8
+
+- zieht die `Affiliate Card` im Gutenberg-Editor optisch deutlich naeher an die echte Live-Karte
+- verlegt Badge-, Titel-, Nutzen- und Bildsteuerung in die Kartenansicht statt in eine Formularbox
+- zeigt Lade- und Fehlerzustaende jetzt direkt in der Karte statt als lose Editor-Hinweise
+
 ## 0.2.7
 
 - zeigt in der Editor-Vorschau nach der Hydration jetzt den echten Produkttitel statt auf die rohe ASIN zurueckzufallen

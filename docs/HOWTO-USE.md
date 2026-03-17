@@ -25,6 +25,7 @@ amazon:B0D7955R6N
    - an dieser Stelle den `Affiliate Card`-Block einfügen
    - kurz danach Titel, Bild und Link laden
    - dir Badge-Dropdown und Bildauswahl direkt im Block zeigen
+   - die Karte schon im Editor fast wie die Live-Ausgabe zeigen
 
 ## Was nicht automatisch erkannt wird
 
@@ -50,6 +51,7 @@ Du kannst den Block auch manuell einsetzen:
 - ist der Token-Absatz direkt nach `Enter` verschwunden?
 - wurde an der gleichen Stelle sofort der Affiliate-Block eingefügt?
 - sind Bild, Titel und Button direkt im Editor sichtbar?
+- wirkt die Karte im Editor bereits fast wie die veröffentlichte Karte?
 - lässt sich das Badge per Dropdown umstellen?
 - lässt sich bei mehreren Bildern das gewünschte Bild auswählen?
 - führen Bild und Button zur richtigen Amazon-Seite?

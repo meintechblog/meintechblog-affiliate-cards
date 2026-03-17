@@ -13,6 +13,7 @@ Das Repo enthält jetzt eine installierbare Plugin-Basis:
 - expliziter Editor-Trigger für exakte Absatz-Tokens wie `amazon:B0D7955R6N`
 - persistente Plugin-Einstellungen für CTA, Badge, Marketplace und Amazon-Credentials
 - direkte Block-Umwandlung im Gutenberg-Editor ohne Speichern/Neuladen
+- WYSIWYG-Editoransicht nah an der echten Live-Karte
 - PHP-Client für die Amazon Creators API
 - `uninstall.php` für sauberes Entfernen der Plugin-Optionen
 - Build-Skript für ein installierbares ZIP
@@ -22,7 +23,7 @@ Das Repo enthält jetzt eine installierbare Plugin-Basis:
 Das Plugin soll Beiträge im normalen WordPress-Editor "sexy" machen, ohne HTML-Gefrickel:
 
 - Affiliate-Karten als echter Gutenberg-Block
-- Editor-Vorschau statt HTML-Box
+- Editor-Vorschau nahe an der echten Live-Karte
 - Bild, Titel, Nutzenzeile und CTA im Inhaltsfluss
 - explizite Erzeugung des Blocks direkt im Editor
 - exakter Trigger über `amazon:ASIN`
@@ -37,6 +38,7 @@ Im Gutenberg-Editor:
 4. Der Block lädt direkt Titel, Bild, Link und Badge-Vorschlag über die Plugin-REST-Anbindung
 5. Existiert die ASIN im Beitrag bereits, wird kein doppelter Block erzeugt
 6. Im Block kannst du Badge, Kurztitel, Nutzenzeile und Bildauswahl direkt bearbeiten
+7. Die Kartenansicht im Editor sieht dabei bereits fast wie die Live-Ausgabe aus
 
 ## Installation
 
