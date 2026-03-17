@@ -173,8 +173,8 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'Nutzenzeile')) {
     exit(1);
 }
 
-if (! str_contains((string) file_get_contents($indexJsPath), 'Bild zurück') || ! str_contains((string) file_get_contents($indexJsPath), 'Bild weiter')) {
-    fwrite(STDERR, "Editor should provide left/right controls for image selection.\n");
+if (! str_contains((string) file_get_contents($indexJsPath), "'<'") || ! str_contains((string) file_get_contents($indexJsPath), "'>'")) {
+    fwrite(STDERR, "Editor should provide compact < and > controls for image selection.\n");
     exit(1);
 }
 
@@ -208,6 +208,11 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__asin')) {
+    fwrite(STDERR, "Editor should show the ASIN visibly inside the affiliate card.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading')) {
     fwrite(STDERR, "Editor should render loading state inside the card shell.\n");
     exit(1);
@@ -238,8 +243,23 @@ if (str_contains((string) file_get_contents($indexJsPath), "label: 'ASIN'")) {
     exit(1);
 }
 
-if (! str_contains((string) file_get_contents($indexJsPath), "item.titleOverride || attributes.amazonTitle || item.title || item.asin")) {
-    fwrite(STDERR, "Editor preview title should prefer override, then hydrated title, then ASIN fallback.\n");
+if (! str_contains((string) file_get_contents($indexJsPath), 'const baseTitle = attributes.amazonTitle || item.title || item.asin || \'Neue Karte\'')) {
+    fwrite(STDERR, "Editor should keep a base title separate from the override.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'const editableTitle = item.titleOverride || previewTitle')) {
+    fwrite(STDERR, "Editor should seed the visible title field with the currently displayed title.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'value: editableTitle')) {
+    fwrite(STDERR, "Editor title field should display the current visible title value.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), "updateItem( 'titleOverride', value === baseTitle ? '' : value )")) {
+    fwrite(STDERR, "Editor should clear the override again when the title field matches the base title.\n");
     exit(1);
 }
 

@@ -311,7 +311,9 @@
             )
         );
         const activeImageUrl = images[ selectedImageIndex ] || item.image_url || '';
-        const previewTitle = item.titleOverride || attributes.amazonTitle || item.title || item.asin || 'Neue Karte';
+        const baseTitle = attributes.amazonTitle || item.title || item.asin || 'Neue Karte';
+        const previewTitle = item.titleOverride || baseTitle;
+        const editableTitle = item.titleOverride || previewTitle;
         const previewBenefit = item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.';
         const ctaLabel = attributes.ctaLabel || 'Preis auf Amazon checken';
         const isLoading = attributes.loadState === 'loading';
@@ -446,14 +448,14 @@
                                     { className: 'mtb-affiliate-cards-editor__image-controls' },
                                     el(
                                         Button,
-                                        { isSecondary: true, onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
-                                        'Bild zurück'
+                                        { isSecondary: true, className: 'mtb-affiliate-cards-editor__image-arrow', onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
+                                        '<'
                                     ),
                                     el( 'span', { className: 'mtb-affiliate-cards-editor__image-index' }, 'Bild ' + ( selectedImageIndex + 1 ) + ' / ' + images.length ),
                                     el(
                                         Button,
-                                        { isSecondary: true, onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
-                                        'Bild weiter'
+                                        { isSecondary: true, className: 'mtb-affiliate-cards-editor__image-arrow', onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
+                                        '>'
                                     )
                                 ),
                                 el( 'img', { src: activeImageUrl, alt: previewTitle } )
@@ -470,9 +472,9 @@
                             el( TextControl, {
                                 label: 'Kurztitel überschreiben',
                                 className: 'mtb-affiliate-cards-editor__title-input',
-                                value: item.titleOverride || '',
+                                value: editableTitle,
                                 onChange: function ( value ) {
-                                    updateItem( 'titleOverride', value );
+                                    updateItem( 'titleOverride', value === baseTitle ? '' : value );
                                 }
                             } ),
                             el( TextareaControl, {
@@ -487,7 +489,8 @@
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__preview' },
                                 el( 'strong', {}, previewTitle ),
-                                el( 'p', {}, previewBenefit )
+                                el( 'p', {}, previewBenefit ),
+                                el( 'div', { className: 'mtb-affiliate-cards-editor__asin' }, 'ASIN: ' + ( item.asin || 'noch nicht gesetzt' ) )
                             ),
                             isLoading && el(
                                 'div',

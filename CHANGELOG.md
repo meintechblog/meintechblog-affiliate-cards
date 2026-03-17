@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.9
+
+- zeigt die ASIN jetzt sichtbar direkt in der `Affiliate Card` im Editor
+- nutzt fuer den Bildwechsel kompakte `<`- und `>`-Buttons statt lange Textlabels
+- fuellt das Titelfeld mit dem aktuell sichtbaren Kartentitel und leert den Override wieder sauber, wenn man auf den Basistitel zurueckgeht
+
 ## 0.2.8
 
 - zieht die `Affiliate Card` im Gutenberg-Editor optisch deutlich naeher an die echte Live-Karte
