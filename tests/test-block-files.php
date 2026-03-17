@@ -182,6 +182,11 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'Produktdaten neu l
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), "item.titleOverride || attributes.amazonTitle || item.title || item.asin")) {
+    fwrite(STDERR, "Editor preview title should prefer override, then hydrated title, then ASIN fallback.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($templatePath), 'mtb-aff-card')) {
     fwrite(STDERR, "Template should render affiliate card markup.\n");
     exit(1);

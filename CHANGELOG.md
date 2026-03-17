@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7
+
+- zeigt in der Editor-Vorschau nach der Hydration jetzt den echten Produkttitel statt auf die rohe ASIN zurueckzufallen
+
 ## 0.2.6
 
 - hydriert neue `Affiliate Card`-Bloecke direkt im Editor nach `amazon:ASIN` statt nur die ASIN stehen zu lassen

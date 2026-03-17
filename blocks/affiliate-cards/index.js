@@ -465,7 +465,7 @@
                     el(
                         'div',
                         { className: 'mtb-affiliate-cards-editor__preview' },
-                        el( 'strong', {}, item.titleOverride || item.asin || 'Neue Karte' ),
+                        el( 'strong', {}, item.titleOverride || attributes.amazonTitle || item.title || item.asin || 'Neue Karte' ),
                         el( 'p', {}, item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.' )
                     )
                 )
