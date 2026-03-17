@@ -36,7 +36,7 @@ MTB_Affiliate_Plugin::instance()->boot();
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_menu']), 'Plugin should register the settings page hook.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['init']), 'Plugin should register init hooks.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_init']), 'Plugin should register admin_init for settings.');
-assert_true_lifecycle(isset($GLOBALS['mtb_actions']['save_post']), 'Plugin should register save_post for autoscan processing.');
+assert_true_lifecycle(! isset($GLOBALS['mtb_actions']['save_post']), 'Plugin should no longer register save_post for token autoscan processing.');
 
 define('WP_UNINSTALL_PLUGIN', true);
 require dirname(__DIR__) . '/uninstall.php';

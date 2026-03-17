@@ -29,7 +29,7 @@ final class MTB_Affiliate_Block {
         wp_register_script(
             'mtb-affiliate-cards-editor',
             MTB_AFFILIATE_CARDS_URL . 'blocks/affiliate-cards/index.js',
-            ['wp-blocks', 'wp-block-editor', 'wp-components', 'wp-element', 'wp-i18n'],
+            ['wp-blocks', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-dom-ready', 'wp-element', 'wp-i18n'],
             MTB_AFFILIATE_CARDS_VERSION,
             true
         );

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- ersetzt das fragile Save-Post-Token-Scannen durch einen expliziten Gutenberg-Editor-Trigger für exakte `amazon:ASIN`-Absätze
+- wandelt Token-Blöcke direkt im Editor beim Commit in native Affiliate-Blocks um
+- verhindert dabei doppelte Produktblöcke im selben Beitrag über eine Editor-Notice
+
 ## 0.2.2
 
 - bestehende Affiliate-Karten bleiben beim ASIN-Autoscan erhalten und werden um neue Produkte ergänzt statt überschrieben

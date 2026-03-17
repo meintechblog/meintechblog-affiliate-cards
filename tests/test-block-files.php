@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 $blockJsonPath = dirname(__DIR__) . '/blocks/affiliate-cards/block.json';
 $editJsPath = dirname(__DIR__) . '/blocks/affiliate-cards/edit.js';
+$indexJsPath = dirname(__DIR__) . '/blocks/affiliate-cards/index.js';
 $templatePath = dirname(__DIR__) . '/templates/affiliate-cards.php';
 
-if (! file_exists($blockJsonPath) || ! file_exists($editJsPath) || ! file_exists($templatePath)) {
-    fwrite(STDERR, "Expected block.json, edit.js and template files to exist.\n");
+if (! file_exists($blockJsonPath) || ! file_exists($editJsPath) || ! file_exists($indexJsPath) || ! file_exists($templatePath)) {
+    fwrite(STDERR, "Expected block.json, index.js, edit.js and template files to exist.\n");
     exit(1);
 }
 
@@ -23,8 +24,23 @@ if (($config['attributes']['items']['type'] ?? '') !== 'array') {
     exit(1);
 }
 
+if (($config['supports']['html'] ?? null) !== false) {
+    fwrite(STDERR, "Block should keep raw HTML editing disabled.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($editJsPath), 'InspectorControls')) {
     fwrite(STDERR, "Editor file should use InspectorControls.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'amazon:')) {
+    fwrite(STDERR, "Editor index should detect amazon:ASIN triggers.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'replaceBlocks')) {
+    fwrite(STDERR, "Editor index should replace paragraph blocks with affiliate blocks.\n");
     exit(1);
 }
 

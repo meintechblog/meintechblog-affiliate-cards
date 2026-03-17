@@ -13,32 +13,25 @@ Der einfachste Test geht so:
 
 1. Öffne einen Testbeitrag oder Entwurf im Block-Editor
 2. Erstelle einen neuen Absatz
-3. Schreibe in diesen Absatz nur eine ASIN, zum Beispiel:
-
-```text
-B0D7955R6N
-```
-
-4. Speichere den Beitrag
-5. Das Plugin soll jetzt:
-   - den ASIN-Absatz entfernen
-   - an dieser Stelle den `Affiliate Cards`-Block einfügen
-
-## Alternative Schreibweise
-
-Statt der nackten ASIN geht auch:
+3. Schreibe in diesen Absatz exakt:
 
 ```text
 amazon:B0D7955R6N
 ```
 
+4. Drücke `Enter`
+5. Das Plugin soll jetzt:
+   - den Absatz sofort im Editor entfernen
+   - an dieser Stelle den `Affiliate Cards`-Block einfügen
+
 ## Was nicht automatisch erkannt wird
 
 Diese Fälle sollen absichtlich nicht automatisch umgewandelt werden:
 
+- nackte ASIN ohne Prefix
 - ASIN mitten in einem Satz
 - ASIN in einem längeren Fließtext
-- ASIN zusammen mit weiterem Text im gleichen Absatz
+- `amazon:ASIN` zusammen mit weiterem Text im gleichen Absatz
 
 ## Manuelle Nutzung
 
@@ -51,8 +44,8 @@ Du kannst den Block auch manuell einsetzen:
 
 ## Beim Test prüfen
 
-- ist der Marker-Absatz verschwunden?
-- wurde an der gleichen Stelle der Affiliate-Block eingefügt?
+- ist der Token-Absatz direkt nach `Enter` verschwunden?
+- wurde an der gleichen Stelle sofort der Affiliate-Block eingefügt?
 - sind Bild, Titel und Button sichtbar?
 - führen Bild und Button zur richtigen Amazon-Seite?
 - passt das Badge zum Beitrag?

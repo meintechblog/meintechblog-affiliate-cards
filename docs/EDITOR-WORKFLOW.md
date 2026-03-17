@@ -15,19 +15,20 @@ Der Editor soll sich normal anfühlen. Keine HTML-Snippets, keine Shortcode-Höl
 
 ### Automatisch
 
-1. Im Beitrag einen eigenen Absatz nur mit `B0D7955R6N` oder `amazon:B0D7955R6N` schreiben
-2. Beitrag speichern
-3. Plugin entfernt diesen Marker-Block
-4. Plugin setzt oder aktualisiert den `Affiliate Cards`-Block an genau dieser Stelle
+1. Im Beitrag einen eigenen Absatz nur mit `amazon:B0D7955R6N` schreiben
+2. `Enter` drücken oder den Block committen
+3. Plugin entfernt diesen Token-Block sofort im Editor
+4. Plugin setzt an genau dieser Stelle einen nativen `Affiliate Cards`-Block
 
 ## Regeln für Auto-Erkennung
 
-- nur eigenständige Text-/Absatzblöcke
+- nur eigenständige Absatzblöcke mit exakt `amazon:ASIN`
+- keine nackten ASINs ohne Prefix
 - nicht mitten im Satz
 - nicht in beliebigem Fließtext
 
 ## Kontrollprinzip
 
 - Der Block muss ganz normal löschbar sein
-- Wenn keine ASIN-Marker mehr im Beitrag stehen, bleibt er auch gelöscht
-- Wenn Marker noch da sind, darf er beim nächsten Speichern wieder entstehen
+- Ein neuer Block entsteht nur durch einen neuen `amazon:ASIN`-Token
+- Wenn die ASIN bereits im Beitrag existiert, wird kein Duplikat erzeugt

@@ -10,9 +10,9 @@ Das Repo enthält jetzt eine installierbare Plugin-Basis:
 - Renderer im Stil der aktuell live getesteten Karten auf `meintechblog.de`
 - automatische Titelkürzung im "kurz und knackig"-Stil
 - Badge-Logik für `Im Video verwendet` vs. `Passend zu diesem Setup`
-- Scanner für eigenständige ASIN-Textblöcke wie `B0D7955R6N` oder `amazon:B0D7955R6N`
+- expliziter Editor-Trigger für exakte Absatz-Tokens wie `amazon:B0D7955R6N`
 - persistente Plugin-Einstellungen für CTA, Badge, Marketplace und Amazon-Credentials
-- `save_post`-Hook, der eigenständige ASIN-Absätze in einen nativen Affiliate-Block umwandelt
+- direkte Block-Umwandlung im Gutenberg-Editor ohne Speichern/Neuladen
 - PHP-Client für die Amazon Creators API
 - `uninstall.php` für sauberes Entfernen der Plugin-Optionen
 - Build-Skript für ein installierbares ZIP
@@ -24,18 +24,19 @@ Das Plugin soll Beiträge im normalen WordPress-Editor "sexy" machen, ohne HTML-
 - Affiliate-Karten als echter Gutenberg-Block
 - Editor-Vorschau statt HTML-Box
 - Bild, Titel, Nutzenzeile und CTA im Inhaltsfluss
-- automatische Erzeugung/Aktualisierung des Blocks beim Speichern
-- Erkennung von allein stehenden ASIN-Blöcken im Editor
+- explizite Erzeugung des Blocks direkt im Editor
+- exakter Trigger über `amazon:ASIN`
 
 ## Verhalten
 
-Beim Speichern eines Beitrags:
+Im Gutenberg-Editor:
 
-1. Das Plugin scannt eigenständige Textblöcke mit `ASIN` oder `amazon:ASIN`
-2. Diese Textblöcke werden entfernt
-3. Ein `Affiliate Cards`-Block wird an genau dieser Stelle erzeugt oder aktualisiert
-4. Produktdaten kommen im Renderpfad aus der Amazon Creators API
-5. Titel werden automatisch auf das aktuelle kurze Live-Niveau gekürzt
+1. Du schreibst in einen leeren Absatz genau `amazon:ASIN`
+2. Du bestätigst den Absatz, typischerweise mit `Enter`
+3. Der Absatz wird direkt im Editor durch einen nativen `Affiliate Cards`-Block ersetzt
+4. Existiert die ASIN im Beitrag bereits, wird kein doppelter Block erzeugt
+5. Produktdaten kommen im Renderpfad aus der Amazon Creators API
+6. Titel werden automatisch auf das aktuelle kurze Live-Niveau gekürzt
 
 ## Installation
 
@@ -64,27 +65,27 @@ Die kurze Version:
 1. Plugin in WordPress aktivieren
 2. Unter `Einstellungen -> Affiliate Cards` die Amazon-Credentials eintragen und speichern
 3. Einen Beitrag im Block-Editor öffnen
-4. In einen eigenen Absatz nur eine ASIN schreiben, zum Beispiel `B0D7955R6N`
-5. Beitrag speichern
-6. Das Plugin entfernt diesen Marker-Absatz und setzt an genau dieser Stelle automatisch den `Affiliate Cards`-Block ein
+4. In einen leeren Absatz genau `amazon:B0D7955R6N` schreiben
+5. `Enter` drücken
+6. Das Plugin ersetzt den Absatz direkt im Editor durch einen `Affiliate Cards`-Block
 
 ### So testest du es am einfachsten
 
 1. Lege einen Testbeitrag oder Entwurf an
 2. Schreibe einen normalen Absatz
-3. Füge darunter einen neuen Absatz ein, der nur aus `B0D7955R6N` besteht
-4. Speichere den Beitrag
-5. Prüfe, ob der ASIN-Absatz verschwunden ist und stattdessen eine Affiliate-Karte erscheint
+3. Füge darunter einen neuen Absatz ein, der nur aus `amazon:B0D7955R6N` besteht
+4. Drücke `Enter`
+5. Prüfe direkt im Editor, ob der Absatz verschwunden ist und stattdessen ein Affiliate-Block erscheint
 6. Öffne die Vorschau und klicke auf Bild oder Button
 7. Prüfe, ob du auf die passende Amazon-Produktseite mit Tracking-Ziel kommst
 
 ### Wichtige Regel
 
-Die automatische Erkennung greift nur, wenn die ASIN allein in einem eigenen Absatz steht.
+Die automatische Erkennung greift nur, wenn der Absatz exakt `amazon:ASIN` enthält.
 
-- funktioniert: `B0D7955R6N`
-- funktioniert auch: `amazon:B0D7955R6N`
-- funktioniert nicht: `Ich nutze B0D7955R6N im Setup`
+- funktioniert: `amazon:B0D7955R6N`
+- funktioniert nicht: `B0D7955R6N`
+- funktioniert nicht: `Ich nutze amazon:B0D7955R6N im Setup`
 
 ### Manuelle Nutzung
 
@@ -139,4 +140,4 @@ find . -name '*.php' -print0 | xargs -0 -n1 php -l
 
 - Migration alter Amazon-Textlinklisten
 - Editor-Vorschau näher an das Frontend ziehen
-- Installation und Live-Test auf `meintechblog.de`
+- REST-Enrichment für frisch erzeugte Blöcke direkt im Editor
