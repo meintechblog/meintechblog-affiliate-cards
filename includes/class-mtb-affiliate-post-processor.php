@@ -5,6 +5,8 @@ declare(strict_types=1);
 final class MTB_Affiliate_Post_Processor {
     private const PARAGRAPH_PATTERN = '/<!-- wp:paragraph\b.*?-->\s*<p>(.*?)<\/p>\s*<!-- \/wp:paragraph -->\s*/su';
     private const TOKEN_PATTERN = '/^(?:amazon:)?([A-Z0-9]{10})$/';
+    private const INLINE_MARKER_PATTERN = '/\bamazon:([A-Z0-9]{10})\b/i';
+    private const INLINE_LINK_PATTERN = '/href=(["\'])https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})(?:[?\/"\']|$)/i';
     private const BLOCK_PATTERN = '/<!-- wp:meintechblog\/affiliate-cards(?:\s+({.*?}))?\s*\/-->\s*/su';
     private const PLACEHOLDER = '__MTB_AFFILIATE_BLOCK__';
 
@@ -47,6 +49,10 @@ final class MTB_Affiliate_Post_Processor {
             static function (array $matches) use (&$asins, &$placeholderInserted): string {
                 $innerText = trim(strip_tags(html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8')));
                 if (! preg_match(self::TOKEN_PATTERN, $innerText, $tokenMatch)) {
+                    $inlineAsins = self::extract_inline_asins($matches[1]);
+                    if ($inlineAsins !== []) {
+                        $asins = array_merge($asins, $inlineAsins);
+                    }
                     return $matches[0];
                 }
 
@@ -78,6 +84,29 @@ final class MTB_Affiliate_Post_Processor {
             'asins' => $uniqueAsins,
             'content' => $finalContent,
         ];
+    }
+
+    private static function extract_inline_asins(string $html): array {
+        $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $found = [];
+
+        if (preg_match_all(self::INLINE_MARKER_PATTERN, $decoded, $matches)) {
+            foreach ($matches[1] as $asin) {
+                $found[] = strtoupper((string) $asin);
+            }
+        }
+
+        if (preg_match_all(self::INLINE_LINK_PATTERN, $decoded, $matches)) {
+            foreach ($matches[2] as $asin) {
+                $found[] = strtoupper($asin);
+            }
+        }
+
+        if ($found === []) {
+            return [];
+        }
+
+        return array_values(array_unique($found));
     }
 
     private function serialize_block(array $asins, array $existingAttrs = []): string {

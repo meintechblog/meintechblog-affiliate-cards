@@ -60,6 +60,38 @@ assert_contains_processor('"asin":"B0CLTV6YB2"', $result['content'], 'Processor 
 assert_not_contains_processor('<p>B0D7955R6N</p>', $result['content'], 'Processor should remove the raw ASIN marker.');
 assert_not_contains_processor('<p>amazon:B0CLTV6YB2</p>', $result['content'], 'Processor should remove the amazon:ASIN marker.');
 
+$inlineContent = <<<HTML
+<!-- wp:paragraph -->
+<p>Im Text: amazon:B0INLINE01 und hier ein Link <a href="https://www.amazon.de/dp/B0INLINE02">Produkt</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Mehrfach im Text: amazon:B0INLINE03, amazon:B0INLINE04, amazon:B0INLINE03.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Kleinschreibung im Token: amazon:b0inline05.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Kein Amazon-Link: <a href="https://example.com/dp/B0INLINE99">soll ignoriert werden</a>.</p>
+<!-- /wp:paragraph -->
+HTML;
+
+$inlineResult = $processor->process($inlineContent);
+
+assert_same_processor(
+    ['B0INLINE01', 'B0INLINE02', 'B0INLINE03', 'B0INLINE04', 'B0INLINE05'],
+    $inlineResult['asins'],
+    'Processor should detect inline amazon:ASIN markers and Amazon /dp/ASIN links, deduped.'
+);
+
+assert_contains_processor('amazon:B0INLINE01', $inlineResult['content'], 'Inline amazon:ASIN markers should not remove the paragraph.');
+assert_contains_processor('/dp/B0INLINE02', $inlineResult['content'], 'Inline Amazon dp link should remain in content.');
+assert_contains_processor('amazon:B0INLINE04', $inlineResult['content'], 'Inline markers should remain in content.');
+assert_contains_processor('amazon:b0inline05', $inlineResult['content'], 'Lowercase inline markers should remain untouched in content.');
+assert_not_contains_processor('B0INLINE99', json_encode($inlineResult['asins']), 'Non-Amazon /dp/ASIN paths should not be collected.');
+
 $firstAffiliatePos = strpos($result['content'], '<!-- wp:meintechblog/affiliate-cards');
 $afterIntroPos = strpos($result['content'], '<p>Vor dem Block.</p>');
 $afterOutroPos = strpos($result['content'], '<p>Nach dem Block.</p>');
