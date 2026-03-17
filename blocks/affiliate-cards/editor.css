@@ -1,46 +1,105 @@
 .mtb-affiliate-cards-editor {
-    border: 1px dashed #e8d7be;
-    padding: 16px;
-    border-radius: 12px;
-    background: #fffdf8;
+    --mtb-aff-bg: #ffffff;
+    --mtb-aff-panel: #f8f2e8;
+    --mtb-aff-border: #e8d7be;
+    --mtb-aff-text: #111111;
+    --mtb-aff-muted: #6b6258;
+    --mtb-aff-soft: #8f8376;
+    --mtb-aff-accent: #e38a44;
+    --mtb-aff-accent-2: #fcd537;
+    --mtb-aff-badge-bg: #111111;
+    --mtb-aff-badge-text: #ffffff;
+    padding: 0;
+    background: transparent;
+}
+
+.mtb-affiliate-cards-editor > h3 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7c6d5a;
 }
 
 .mtb-affiliate-cards-editor__item {
-    border: 1px solid #eadbc8;
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 12px;
-    background: #ffffff;
+    margin: 0;
 }
 
-.mtb-affiliate-cards-editor__preview {
-    margin: 10px 0 14px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: #f8f2e8;
+.mtb-affiliate-cards-editor__card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--mtb-aff-border);
+    background: var(--mtb-aff-bg);
+    box-shadow: 0 14px 34px rgba(17, 17, 17, 0.1);
 }
 
-.mtb-affiliate-cards-editor__title-input,
-.mtb-affiliate-cards-editor__benefit-input {
-    margin-bottom: 10px;
+.mtb-affiliate-cards-editor__card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, #fcd537 0%, #e38a44 100%);
 }
 
-.mtb-affiliate-cards-editor__status {
-    margin: 8px 0 10px;
-    color: #5d513f;
+.mtb-affiliate-cards-editor__badge-area {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    z-index: 2;
+    width: auto;
+    max-width: calc(100% - 32px);
 }
 
-.mtb-affiliate-cards-editor__warning {
-    margin: 8px 0 10px;
-    color: #9a2b2b;
+.mtb-affiliate-cards-editor__badge-area .components-base-control {
+    margin: 0;
+}
+
+.mtb-affiliate-cards-editor__badge-area .components-base-control__label {
+    margin: 0 0 6px;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.mtb-affiliate-cards-editor__badge-area .components-select-control__input,
+.mtb-affiliate-cards-editor__badge-area select {
+    min-height: 34px;
+    padding: 6px 28px 6px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--mtb-aff-badge-bg);
+    color: var(--mtb-aff-badge-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: none;
+}
+
+.mtb-affiliate-cards-editor__media-area {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    min-height: 190px;
+    padding: 58px 20px 20px;
+    background: linear-gradient(180deg, #fff8e8 0%, var(--mtb-aff-panel) 100%);
+}
+
+.mtb-affiliate-cards-editor__image,
+.mtb-affiliate-cards-editor__state {
+    width: 100%;
 }
 
 .mtb-affiliate-cards-editor__image {
-    margin: 8px 0 12px;
-    border: 1px solid #eadbc8;
-    border-radius: 10px;
-    padding: 10px;
-    background: #fff8ea;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
 }
 
 .mtb-affiliate-cards-editor__image-controls {
@@ -48,20 +107,213 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 8px;
 }
 
 .mtb-affiliate-cards-editor__image-index {
     font-size: 12px;
     font-weight: 600;
-    color: #635847;
+    color: var(--mtb-aff-soft);
 }
 
 .mtb-affiliate-cards-editor__image img {
     display: block;
     width: 100%;
-    max-height: 160px;
+    max-height: 180px;
     object-fit: contain;
-    border-radius: 8px;
-    background: #ffffff;
+    border-radius: 10px;
+    background: transparent;
+}
+
+.mtb-affiliate-cards-editor__body-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px 24px 22px;
+    background: var(--mtb-aff-bg);
+}
+
+.mtb-affiliate-cards-editor__title-input,
+.mtb-affiliate-cards-editor__benefit-input {
+    margin: 0;
+}
+
+.mtb-affiliate-cards-editor__title-input .components-base-control__label,
+.mtb-affiliate-cards-editor__benefit-input .components-base-control__label {
+    margin-bottom: 4px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--mtb-aff-soft);
+}
+
+.mtb-affiliate-cards-editor__title-input input {
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid var(--mtb-aff-border);
+    border-radius: 12px;
+    background: #fffdfa;
+    color: var(--mtb-aff-text);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.15;
+    box-shadow: none;
+}
+
+.mtb-affiliate-cards-editor__benefit-input textarea {
+    min-height: 72px;
+    padding: 10px 14px;
+    border: 1px solid var(--mtb-aff-border);
+    border-radius: 12px;
+    background: #fffdfa;
+    color: var(--mtb-aff-muted);
+    font-size: 0.97rem;
+    line-height: 1.5;
+    resize: vertical;
+    box-shadow: none;
+}
+
+.mtb-affiliate-cards-editor__preview {
+    padding: 0;
+    background: transparent;
+}
+
+.mtb-affiliate-cards-editor__preview strong {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--mtb-aff-text);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.mtb-affiliate-cards-editor__preview p {
+    margin: 0;
+    color: var(--mtb-aff-muted);
+    font-size: 0.97rem;
+    line-height: 1.5;
+}
+
+.mtb-affiliate-cards-editor__cta-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fcd537 0%, #e38a44 100%);
+    color: #111111;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.mtb-affiliate-cards-editor__cta-label {
+    font-size: 1rem;
+    line-height: 1.15;
+}
+
+.mtb-affiliate-cards-editor__cta-meta {
+    font-size: 0.72rem;
+    line-height: 1.15;
+    font-weight: 600;
+    opacity: 0.82;
+}
+
+.mtb-affiliate-cards-editor__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 100%;
+    border: 1px solid rgba(17, 17, 17, 0.06);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+}
+
+.mtb-affiliate-cards-editor__state--loading {
+    background: rgba(255, 255, 255, 0.66);
+}
+
+.mtb-affiliate-cards-editor__state--error {
+    align-items: stretch;
+    background: #fff4ef;
+    border-color: rgba(154, 43, 43, 0.18);
+}
+
+.mtb-affiliate-cards-editor__state--empty {
+    background: rgba(255, 255, 255, 0.66);
+    color: var(--mtb-aff-soft);
+}
+
+.mtb-affiliate-cards-editor__state-copy {
+    color: var(--mtb-aff-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.mtb-affiliate-cards-editor__state--error .mtb-affiliate-cards-editor__state-copy {
+    color: #9a2b2b;
+}
+
+.mtb-affiliate-cards-editor__skeleton {
+    display: block;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(252, 213, 55, 0.32) 0%, rgba(227, 138, 68, 0.16) 50%, rgba(252, 213, 55, 0.32) 100%);
+    animation: mtb-affiliate-editor-pulse 1.4s ease-in-out infinite;
+}
+
+.mtb-affiliate-cards-editor__skeleton--image {
+    width: 100%;
+    min-height: 150px;
+    border-radius: 12px;
+}
+
+.mtb-affiliate-cards-editor__skeleton--line {
+    width: 100%;
+    height: 12px;
+}
+
+.mtb-affiliate-cards-editor__skeleton--line-short {
+    width: 62%;
+}
+
+.mtb-affiliate-cards-editor__warning {
+    margin: 8px 0 10px;
+    color: #9a2b2b;
+}
+
+@keyframes mtb-affiliate-editor-pulse {
+    0%,
+    100% {
+        opacity: 0.72;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 760px) {
+    .mtb-affiliate-cards-editor__card {
+        grid-template-columns: 1fr;
+    }
+
+    .mtb-affiliate-cards-editor__media-area {
+        min-height: 160px;
+        padding: 58px 20px 18px;
+    }
+
+    .mtb-affiliate-cards-editor__body-area {
+        padding: 18px;
+    }
+
+    .mtb-affiliate-cards-editor__preview strong {
+        font-size: 1.2rem;
+    }
 }

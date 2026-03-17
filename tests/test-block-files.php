@@ -5,13 +5,14 @@ declare(strict_types=1);
 $blockJsonPath = dirname(__DIR__) . '/blocks/affiliate-cards/block.json';
 $editJsPath = dirname(__DIR__) . '/blocks/affiliate-cards/edit.js';
 $indexJsPath = dirname(__DIR__) . '/blocks/affiliate-cards/index.js';
+$editorCssPath = dirname(__DIR__) . '/blocks/affiliate-cards/editor.css';
 $templatePath = dirname(__DIR__) . '/templates/affiliate-cards.php';
 $pluginClassPath = dirname(__DIR__) . '/includes/class-mtb-affiliate-plugin.php';
 $readmePath = dirname(__DIR__) . '/README.md';
 $howtoPath = dirname(__DIR__) . '/docs/HOWTO-USE.md';
 
-if (! file_exists($blockJsonPath) || ! file_exists($editJsPath) || ! file_exists($indexJsPath) || ! file_exists($templatePath) || ! file_exists($pluginClassPath) || ! file_exists($readmePath) || ! file_exists($howtoPath)) {
-    fwrite(STDERR, "Expected block, template, plugin class and docs files to exist.\n");
+if (! file_exists($blockJsonPath) || ! file_exists($editJsPath) || ! file_exists($indexJsPath) || ! file_exists($editorCssPath) || ! file_exists($templatePath) || ! file_exists($pluginClassPath) || ! file_exists($readmePath) || ! file_exists($howtoPath)) {
+    fwrite(STDERR, "Expected block, template, editor CSS, plugin class and docs files to exist.\n");
     exit(1);
 }
 
@@ -207,6 +208,16 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading')) {
+    fwrite(STDERR, "Editor should render loading state inside the card shell.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--error')) {
+    fwrite(STDERR, "Editor should render error state inside the card shell.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__title-input')) {
     fwrite(STDERR, "Editor should expose the title override as an inline card control.\n");
     exit(1);
@@ -229,6 +240,26 @@ if (str_contains((string) file_get_contents($indexJsPath), "label: 'ASIN'")) {
 
 if (! str_contains((string) file_get_contents($indexJsPath), "item.titleOverride || attributes.amazonTitle || item.title || item.asin")) {
     fwrite(STDERR, "Editor preview title should prefer override, then hydrated title, then ASIN fallback.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), 'grid-template-columns: 220px minmax(0, 1fr);')) {
+    fwrite(STDERR, "Editor CSS should mirror the two-column live card layout.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), 'linear-gradient(135deg, #fcd537 0%, #e38a44 100%)')) {
+    fwrite(STDERR, "Editor CSS should mirror the live CTA gradient.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__state--loading')) {
+    fwrite(STDERR, "Editor CSS should style the loading state in-card.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__state--error')) {
+    fwrite(STDERR, "Editor CSS should style the error state in-card.\n");
     exit(1);
 }
 

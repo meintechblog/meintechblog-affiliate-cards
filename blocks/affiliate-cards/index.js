@@ -314,6 +314,8 @@
         const previewTitle = item.titleOverride || attributes.amazonTitle || item.title || item.asin || 'Neue Karte';
         const previewBenefit = item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.';
         const ctaLabel = attributes.ctaLabel || 'Preis auf Amazon checken';
+        const isLoading = attributes.loadState === 'loading';
+        const hasError = attributes.loadState === 'error';
 
         function updateItem( key, value ) {
             props.setAttributes( {
@@ -407,21 +409,6 @@
                     'div',
                     blockProps,
                     el( 'h3', {}, 'Affiliate Card' ),
-                attributes.loadState === 'loading' && el(
-                    'p',
-                    { className: 'mtb-affiliate-cards-editor__status' },
-                    'Produktdaten werden geladen...'
-                ),
-                attributes.loadState === 'error' && el(
-                    'p',
-                    { className: 'mtb-affiliate-cards-editor__warning' },
-                    attributes.loadError || 'Produktdaten konnten nicht geladen werden.'
-                ),
-                attributes.loadState === 'error' && el(
-                    Button,
-                    { isSecondary: true, onClick: retryHydration },
-                    'Produktdaten neu laden'
-                ),
                 items.length > 1 && el(
                     'p',
                     { className: 'mtb-affiliate-cards-editor__warning' },
@@ -446,7 +433,12 @@
                         el(
                             'div',
                             { className: 'mtb-affiliate-cards-editor__media-area' },
-                            images.length > 0 && el(
+                            isLoading && el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading' },
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__skeleton mtb-affiliate-cards-editor__skeleton--image' } )
+                            ),
+                            ! isLoading && images.length > 0 && el(
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__image' },
                                 el(
@@ -465,6 +457,11 @@
                                     )
                                 ),
                                 el( 'img', { src: activeImageUrl, alt: previewTitle } )
+                            ),
+                            ! isLoading && ! images.length && el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--empty' },
+                                'Noch kein Produktbild geladen'
                             )
                         ),
                         el(
@@ -491,6 +488,23 @@
                                 { className: 'mtb-affiliate-cards-editor__preview' },
                                 el( 'strong', {}, previewTitle ),
                                 el( 'p', {}, previewBenefit )
+                            ),
+                            isLoading && el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading' },
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__skeleton mtb-affiliate-cards-editor__skeleton--line' } ),
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__skeleton mtb-affiliate-cards-editor__skeleton--line mtb-affiliate-cards-editor__skeleton--line-short' } ),
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__state-copy' }, 'Produktdaten werden geladen...' )
+                            ),
+                            hasError && el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--error' },
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__state-copy' }, attributes.loadError || 'Produktdaten konnten nicht geladen werden.' ),
+                                el(
+                                    Button,
+                                    { isSecondary: true, onClick: retryHydration },
+                                    'Produktdaten neu laden'
+                                )
                             ),
                             el(
                                 'div',
