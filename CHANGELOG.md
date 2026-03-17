@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.6
+
+- hydriert neue `Affiliate Card`-Bloecke direkt im Editor nach `amazon:ASIN` statt nur die ASIN stehen zu lassen
+- fuegt In-Block-Steuerung fuer Badge, Kurztitel, Nutzenzeile, Bildwechsel und Retry bei Ladefehlern hinzu
+- laesst im Frontend bewusst gespeicherte Titel-, Link- und Bildentscheidungen gewinnen, statt sie wieder vom Live-Fetch ueberschreiben zu lassen
+
 ## 0.2.5
 
 - zieht den Editor-Flow auf echte Einzelkarten um: ein `Affiliate Card`-Block steht jetzt fuer genau ein Produkt

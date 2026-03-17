@@ -34,9 +34,9 @@ Im Gutenberg-Editor:
 1. Du schreibst in einen leeren Absatz genau `amazon:ASIN`
 2. Du bestätigst den Absatz, typischerweise mit `Enter`
 3. Der Absatz wird direkt im Editor durch einen nativen `Affiliate Card`-Block ersetzt
-4. Existiert die ASIN im Beitrag bereits, wird kein doppelter Block erzeugt
-5. Produktdaten kommen im Renderpfad aus der Amazon Creators API
-6. Titel werden automatisch auf das aktuelle kurze Live-Niveau gekürzt
+4. Der Block lädt direkt Titel, Bild, Link und Badge-Vorschlag über die Plugin-REST-Anbindung
+5. Existiert die ASIN im Beitrag bereits, wird kein doppelter Block erzeugt
+6. Im Block kannst du Badge, Kurztitel, Nutzenzeile und Bildauswahl direkt bearbeiten
 
 ## Installation
 
@@ -67,7 +67,7 @@ Die kurze Version:
 3. Einen Beitrag im Block-Editor öffnen
 4. In einen leeren Absatz genau `amazon:B0D7955R6N` schreiben
 5. `Enter` drücken
-6. Das Plugin ersetzt den Absatz direkt im Editor durch einen `Affiliate Card`-Block
+6. Das Plugin ersetzt den Absatz direkt im Editor durch einen `Affiliate Card`-Block und lädt sofort die Produktdaten
 
 ### So testest du es am einfachsten
 
@@ -75,9 +75,10 @@ Die kurze Version:
 2. Schreibe einen normalen Absatz
 3. Füge darunter einen neuen Absatz ein, der nur aus `amazon:B0D7955R6N` besteht
 4. Drücke `Enter`
-5. Prüfe direkt im Editor, ob der Absatz verschwunden ist und stattdessen ein Affiliate-Block erscheint
-6. Öffne die Vorschau und klicke auf Bild oder Button
-7. Prüfe, ob du auf die passende Amazon-Produktseite mit Tracking-Ziel kommst
+5. Prüfe direkt im Editor, ob Titel und Bild ohne Reload erscheinen
+6. Ändere testweise das Badge oder wechsle ein Bild weiter
+7. Öffne die Vorschau und klicke auf Bild oder Button
+8. Prüfe, ob du auf die passende Amazon-Produktseite mit Tracking-Ziel kommst
 
 ### Wichtige Regel
 
@@ -139,5 +140,5 @@ find . -name '*.php' -print0 | xargs -0 -n1 php -l
 ## Nächste Schritte
 
 - Migration alter Amazon-Textlinklisten
-- Editor-Vorschau näher an das Frontend ziehen
-- REST-Enrichment für frisch erzeugte Blöcke direkt im Editor
+- leichte API-/Editor-Caches gegen unnötige Amazon-Requests
+- Bulk-Aufwertung alter Inline-Affiliate-Links

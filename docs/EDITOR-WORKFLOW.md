@@ -19,6 +19,8 @@ Der Editor soll sich normal anfühlen. Keine HTML-Snippets, keine Shortcode-Höl
 2. `Enter` drücken oder den Block committen
 3. Plugin entfernt diesen Token-Block sofort im Editor
 4. Plugin setzt an genau dieser Stelle einen nativen `Affiliate Card`-Block
+5. Der Block hydriert sich sofort mit Titel, Bild, Link und Badge-Vorschlag
+6. Badge, Bildwahl und Kurztexte sind direkt im Block bearbeitbar
 
 ## Regeln für Auto-Erkennung
 
