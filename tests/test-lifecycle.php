@@ -54,7 +54,7 @@ assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_menu']), 'Plugin shou
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['init']), 'Plugin should register init hooks.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_init']), 'Plugin should register admin_init for settings.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['rest_api_init']), 'Plugin should register REST API hydration wiring.');
-assert_true_lifecycle(! isset($GLOBALS['mtb_actions']['save_post']), 'Plugin should no longer register save_post for token autoscan processing.');
+assert_true_lifecycle(isset($GLOBALS['mtb_actions']['save_post']), 'Plugin should register save_post for inline affiliate enrichment on save.');
 
 foreach ($GLOBALS['mtb_actions']['rest_api_init'] as $restCallback) {
     if (is_callable($restCallback)) {

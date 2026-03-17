@@ -14,6 +14,7 @@ Das Repo enthält jetzt eine installierbare Plugin-Basis:
 - persistente Plugin-Einstellungen für CTA, Badge, Marketplace und Amazon-Credentials
 - direkte Block-Umwandlung im Gutenberg-Editor ohne Speichern/Neuladen
 - WYSIWYG-Editoransicht nah an der echten Live-Karte
+- Inline-Fließtext-Workflow per `amazon:ASIN` mit automatischer Satz-Umschreibung und Card-Erzeugung beim Speichern
 - PHP-Client für die Amazon Creators API
 - `uninstall.php` für sauberes Entfernen der Plugin-Optionen
 - Build-Skript für ein installierbares ZIP
@@ -27,6 +28,7 @@ Das Plugin soll Beiträge im normalen WordPress-Editor "sexy" machen, ohne HTML-
 - Bild, Titel, Nutzenzeile und CTA im Inhaltsfluss
 - explizite Erzeugung des Blocks direkt im Editor
 - exakter Trigger über `amazon:ASIN`
+- zusätzlicher Save-Flow für Inline-Affiliate-Stellen mitten im Absatz
 
 ## Verhalten
 
@@ -39,6 +41,13 @@ Im Gutenberg-Editor:
 5. Existiert die ASIN im Beitrag bereits, wird kein doppelter Block erzeugt
 6. Im Block kannst du Badge, Kurztitel, Nutzenzeile und Bildauswahl direkt bearbeiten
 7. Die Kartenansicht im Editor sieht dabei bereits fast wie die Live-Ausgabe aus
+
+Beim Speichern eines Beitrags:
+
+1. Du schreibst im Fließtext z. B. `Ich nutze amazon:B0CK3L9WD3 sehr gern.`
+2. Beim Speichern wird der Marker zu `Raspberry Pi 5 (Affiliate-Link)` mit Amazon-Ziel umgeschrieben
+3. Direkt unter diesem Absatz entsteht automatisch eine einzelne `Affiliate Card`
+4. Bei mehreren `amazon:ASIN`-Markern im selben Absatz entstehen mehrere Cards in derselben Reihenfolge
 
 ## Installation
 
@@ -70,6 +79,16 @@ Die kurze Version:
 4. In einen leeren Absatz genau `amazon:B0D7955R6N` schreiben
 5. `Enter` drücken
 6. Das Plugin ersetzt den Absatz direkt im Editor durch einen `Affiliate Card`-Block und lädt sofort die Produktdaten
+
+### Inline im Fließtext
+
+1. Öffne einen Beitrag im Block-Editor
+2. Schreibe in einen normalen Absatz z. B. `Ich nutze amazon:B0D7955R6N im Setup`
+3. Speichere den Beitrag
+4. Prüfe danach:
+   - der Marker im Satz wurde zu `Titel (Affiliate-Link)`
+   - direkt unter dem Absatz wurde eine `Affiliate Card` eingefügt
+   - bei mehreren Markern im selben Absatz wurden mehrere Cards erzeugt
 
 ### So testest du es am einfachsten
 

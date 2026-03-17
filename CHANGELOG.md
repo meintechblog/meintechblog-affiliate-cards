@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.12
+
+- erweitert den Save-Flow um Inline-Affiliate-Enrichment: `amazon:ASIN` im Fließtext wird zu verlinktem `Titel (Affiliate-Link)` umgeschrieben
+- erzeugt direkt unter dem betroffenen Absatz einzelne `Affiliate Card`-Blöcke pro Produkt statt nur rohe Marker zu sammeln
+- verhindert Doppelblöcke bei bereits vorhandenen benachbarten Cards und fällt bei abgelehnten Datums-Tags konservativ auf bestehende funktionierende Tracking-IDs zurück
+
 ## 0.2.11
 
 - richtet ASIN-Feld und Badge im Editor in einer gemeinsamen Header-Zeile aus, damit sich beides nicht mehr ueberlappt

@@ -24,6 +24,14 @@ Die `Affiliate Card` soll sich dabei im Editor fast wie die veröffentlichte Kar
 5. Der Block hydriert sich sofort mit Titel, Bild, Link und Badge-Vorschlag
 6. Badge, Bildwahl und Kurztexte sind direkt im Block bearbeitbar
 
+### Inline im Satz
+
+1. In einem normalen Absatz `amazon:B0D7955R6N` in den Fließtext schreiben
+2. Beitrag speichern
+3. Der Marker wird zu `Titel (Affiliate-Link)` umgeschrieben
+4. Direkt unter diesem Absatz setzt das Plugin eine oder mehrere einzelne `Affiliate Card`-Blöcke
+5. Bei mehreren `amazon:ASIN`-Markern im selben Absatz bleiben Reihenfolge und Absatzbezug erhalten
+
 ## WYSIWYG-Prinzip
 
 - Die Kartenansicht im Editor lehnt sich bewusst an die Live-Ausgabe an
@@ -35,8 +43,8 @@ Die `Affiliate Card` soll sich dabei im Editor fast wie die veröffentlichte Kar
 
 - nur eigenständige Absatzblöcke mit exakt `amazon:ASIN`
 - keine nackten ASINs ohne Prefix
-- nicht mitten im Satz
-- nicht in beliebigem Fließtext
+- im Fließtext nur mit `amazon:ASIN`
+- keine freie Produktnamenerkennung ohne Marker
 
 ## Kontrollprinzip
 

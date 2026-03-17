@@ -27,14 +27,31 @@ amazon:B0D7955R6N
    - dir Badge-Dropdown und Bildauswahl direkt im Block zeigen
    - die Karte schon im Editor fast wie die Live-Ausgabe zeigen
 
+## Inline im Fließtext
+
+Für normale Sätze geht jetzt zusätzlich dieser Flow:
+
+1. Öffne einen Beitrag im Block-Editor
+2. Schreibe in einen normalen Absatz zum Beispiel:
+
+```text
+Ich nutze amazon:B0D7955R6N in diesem Setup.
+```
+
+3. Speichere den Beitrag
+4. Danach soll das Plugin:
+   - `amazon:B0D7955R6N` im Satz zu `Titel (Affiliate-Link)` umschreiben
+   - den Affiliate-Link auf das passende Amazon-Produkt mit Tracking-Ziel setzen
+   - direkt unter dem Absatz eine `Affiliate Card` erzeugen
+5. Wenn du mehrere `amazon:ASIN`-Marker im selben Absatz nutzt, entstehen mehrere einzelne Cards direkt unter diesem Absatz
+
 ## Was nicht automatisch erkannt wird
 
 Diese Fälle sollen absichtlich nicht automatisch umgewandelt werden:
 
 - nackte ASIN ohne Prefix
 - ASIN mitten in einem Satz
-- ASIN in einem längeren Fließtext
-- `amazon:ASIN` zusammen mit weiterem Text im gleichen Absatz
+- ASIN in einem längeren Fließtext ohne `amazon:`-Prefix
 
 ## Manuelle Nutzung
 

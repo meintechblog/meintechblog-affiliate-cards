@@ -37,6 +37,7 @@ final class MTB_Affiliate_Plugin {
         add_action('init', [$this, 'register_assets']);
         add_action('init', [$this->block, 'register']);
         add_action('rest_api_init', [$this->restController, 'register_routes']);
+        add_action('save_post', [$this, 'handle_save_post'], 20, 3);
     }
 
     public static function activate(): void {
