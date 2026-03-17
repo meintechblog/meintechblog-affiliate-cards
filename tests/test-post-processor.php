@@ -159,6 +159,40 @@ assert_contains_processor('<a href="https://example.com">amazon:B0INLINE10</a>',
 assert_not_contains_processor('https://www.amazon.de/dp/B0INLINE09', $inlineProtected['content'], 'Processor should not create Amazon links inside code tags.');
 assert_not_contains_processor('https://www.amazon.de/dp/B0INLINE10', $inlineProtected['content'], 'Processor should not nest Amazon links inside existing anchors.');
 
+$inlineCards = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Im Absatz stehen amazon:B0INLINE11 und amazon:B0INLINE12.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Danach normaler Text.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+if (substr_count($inlineCards['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
+    fwrite(STDERR, "Inline paragraphs should create one affiliate card block per unique ASIN.\n");
+    exit(1);
+}
+
+$inlineParagraphPos = strpos($inlineCards['content'], 'Im Absatz stehen');
+$inlineCardOnePos = strpos($inlineCards['content'], '"asin":"B0INLINE11"');
+$inlineCardTwoPos = strpos($inlineCards['content'], '"asin":"B0INLINE12"');
+$afterInlineParagraphPos = strpos($inlineCards['content'], 'Danach normaler Text.');
+
+if ($inlineParagraphPos === false || $inlineCardOnePos === false || $inlineCardTwoPos === false || $afterInlineParagraphPos === false || ! ($inlineParagraphPos < $inlineCardOnePos && $inlineCardOnePos < $inlineCardTwoPos && $inlineCardTwoPos < $afterInlineParagraphPos)) {
+    fwrite(STDERR, "Inline affiliate cards should be inserted directly after the matching paragraph in token order.\n");
+    exit(1);
+}
+
+$placeholderLiteral = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Literal __MTB_AFFILIATE_INLINE_BLOCK_1__ muss stehen bleiben, plus amazon:B0INLINE13.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor('__MTB_AFFILIATE_INLINE_BLOCK_1__', $placeholderLiteral['content'], 'Literal placeholder-like user text must not be replaced.');
+assert_contains_processor('"asin":"B0INLINE13"', $placeholderLiteral['content'], 'Real inline affiliate markers should still create a block.');
+
 $firstAffiliatePos = strpos($result['content'], '<!-- wp:meintechblog/affiliate-cards');
 $afterIntroPos = strpos($result['content'], '<p>Vor dem Block.</p>');
 $afterOutroPos = strpos($result['content'], '<p>Nach dem Block.</p>');
