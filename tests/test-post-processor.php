@@ -193,6 +193,26 @@ HTML);
 assert_contains_processor('__MTB_AFFILIATE_INLINE_BLOCK_1__', $placeholderLiteral['content'], 'Literal placeholder-like user text must not be replaced.');
 assert_contains_processor('"asin":"B0INLINE13"', $placeholderLiteral['content'], 'Real inline affiliate markers should still create a block.');
 
+$inlineExistingAdjacent = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Direkt darunter steht amazon:B0INLINE14.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0INLINE14","title":"Alter Titel","detail_url":"https://old.example/B0INLINE14"}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
+
+<!-- wp:paragraph -->
+<p>Nachfolgeabsatz.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+if (substr_count($inlineExistingAdjacent['content'], '"asin":"B0INLINE14"') !== 1) {
+    fwrite(STDERR, "Adjacent inline affiliate cards should be updated instead of duplicated.\n");
+    exit(1);
+}
+
+assert_contains_processor('Amazon Titel B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should keep the newer resolved content.');
+assert_not_contains_processor('https://old.example/B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should replace stale detail URLs.');
+
 $firstAffiliatePos = strpos($result['content'], '<!-- wp:meintechblog/affiliate-cards');
 $afterIntroPos = strpos($result['content'], '<p>Vor dem Block.</p>');
 $afterOutroPos = strpos($result['content'], '<p>Nach dem Block.</p>');

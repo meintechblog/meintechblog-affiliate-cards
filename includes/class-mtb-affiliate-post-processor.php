@@ -112,6 +112,7 @@ final class MTB_Affiliate_Post_Processor {
 
         $block = $this->serialize_block($uniqueAsins, $existingAttrs);
         $finalContent = str_replace(self::PLACEHOLDER, $block, $processedContent ?? $content);
+        $finalContent = $this->collapse_adjacent_affiliate_blocks($finalContent);
 
         return [
             'asins' => $uniqueAsins,
@@ -235,6 +236,38 @@ final class MTB_Affiliate_Post_Processor {
         ];
 
         return '<!-- wp:meintechblog/affiliate-cards ' . json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ' /-->';
+    }
+
+    private function collapse_adjacent_affiliate_blocks(string $content): string {
+        return preg_replace_callback(
+            '/(?:(?:<!-- wp:meintechblog\/affiliate-cards(?:\s+{.*?})?\s*\/-->\s*){2,})/su',
+            function (array $matches): string {
+                if (! preg_match_all(self::BLOCK_PATTERN, $matches[0], $blockMatches, PREG_SET_ORDER)) {
+                    return $matches[0];
+                }
+
+                $kept = [];
+                $seen = [];
+
+                foreach ($blockMatches as $index => $blockMatch) {
+                    $blockMarkup = $blockMatch[0];
+                    $attrs = $this->decode_attrs($blockMatch[1] ?? '');
+                    $items = $this->sanitize_items($attrs['items'] ?? []);
+                    $asinKey = count($items) === 1 ? (string) ($items[0]['asin'] ?? '') : '';
+                    $dedupeKey = $asinKey !== '' ? 'asin:' . $asinKey : 'block:' . $index;
+
+                    if (isset($seen[$dedupeKey])) {
+                        continue;
+                    }
+
+                    $seen[$dedupeKey] = true;
+                    $kept[] = $blockMarkup;
+                }
+
+                return implode('', $kept);
+            },
+            $content
+        ) ?? $content;
     }
 
     private static function build_inline_placeholder(int $index, string $asin, string $paragraphMarkup): string {
