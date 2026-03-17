@@ -10,6 +10,7 @@
     const SelectControl = components.SelectControl;
     const Button = components.Button;
     const TOKEN_PATTERN = /^amazon:([A-Z0-9]{10})$/;
+    const HYDRATION_ENDPOINT = 'mtb-affiliate-cards/v1/item';
     let isHandlingTokenReplacement = false;
 
     function normalizeParagraphContent( content ) {
@@ -50,13 +51,154 @@
         }, new Set() );
     }
 
+    function buildHydrationUrl( asin, postId ) {
+        const root = ( window.wpApiSettings && window.wpApiSettings.root ) ? window.wpApiSettings.root : '/wp-json/';
+        const trimmedRoot = root.replace( /\/+$/, '' );
+        let url = trimmedRoot + '/' + HYDRATION_ENDPOINT + '?asin=' + encodeURIComponent( asin );
+        if ( postId ) {
+            url += '&postId=' + encodeURIComponent( String( postId ) );
+        }
+        return url;
+    }
+
+    function normalizeHydratedImages( payload ) {
+        if ( Array.isArray( payload.images ) && payload.images.length ) {
+            return payload.images.filter( function ( value ) {
+                return typeof value === 'string' && value.length > 0;
+            } );
+        }
+
+        if ( typeof payload.imageUrl === 'string' && payload.imageUrl ) {
+            return [ payload.imageUrl ];
+        }
+
+        return [];
+    }
+
+    function getLiveHydrationBlock( editorSelect, clientId, asin ) {
+        if ( ! editorSelect || ! editorSelect.getBlock ) {
+            return null;
+        }
+
+        const liveBlock = editorSelect.getBlock( clientId );
+        if ( ! liveBlock || liveBlock.name !== 'meintechblog/affiliate-cards' ) {
+            return null;
+        }
+
+        const liveItems = Array.isArray( liveBlock.attributes && liveBlock.attributes.items )
+            ? liveBlock.attributes.items
+            : [];
+        const currentAsin = liveItems[ 0 ] && liveItems[ 0 ].asin
+            ? String( liveItems[ 0 ].asin ).trim().toUpperCase()
+            : '';
+
+        if ( currentAsin !== asin ) {
+            return null;
+        }
+
+        return liveBlock;
+    }
+
+    function hydrateAffiliateBlock( editorSelect, editorDispatch, clientId, asin, postId ) {
+        const headers = {};
+        if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+            headers[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+        }
+
+        return window.fetch( buildHydrationUrl( asin, postId ), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: headers
+        } ).then( function ( response ) {
+            return response.json().then( function ( payload ) {
+                if ( ! response.ok ) {
+                    const message = payload && payload.message ? payload.message : 'Hydration failed';
+                    throw new Error( message );
+                }
+                return payload;
+            } );
+        } ).then( function ( payload ) {
+            const images = normalizeHydratedImages( payload );
+            const title = payload && payload.title ? payload.title : asin;
+            const detailUrl = payload && payload.detailUrl ? payload.detailUrl : '';
+            const suggestedBadgeMode = payload && ( payload.suggestedBadgeMode === 'video' || payload.suggestedBadgeMode === 'setup' )
+                ? payload.suggestedBadgeMode
+                : 'auto';
+            const suggestedBenefit = payload && payload.suggestedBenefit ? payload.suggestedBenefit : '';
+            const liveBlock = getLiveHydrationBlock( editorSelect, clientId, asin );
+            if ( ! liveBlock ) {
+                return;
+            }
+            const attrs = liveBlock.attributes || {};
+            if ( attrs.loadState !== 'loading' ) {
+                return;
+            }
+
+            const currentItems = Array.isArray( attrs.items ) && attrs.items.length
+                ? attrs.items
+                : [ { asin: asin } ];
+            const currentItem = Object.assign( {}, currentItems[ 0 ] || {}, { asin: asin } );
+            const nextItem = Object.assign( {}, currentItem );
+
+            if ( ( ! currentItem.title || currentItem.title === asin ) && title ) {
+                nextItem.title = title;
+            }
+            if ( ! currentItem.detail_url && detailUrl ) {
+                nextItem.detail_url = detailUrl;
+            }
+            if ( ! currentItem.image_url && images[ 0 ] ) {
+                nextItem.image_url = images[ 0 ];
+            }
+            if ( ! currentItem.benefit && suggestedBenefit ) {
+                nextItem.benefit = suggestedBenefit;
+            }
+
+            const nextAttributes = {
+                loadState: 'ready',
+                loadError: '',
+                items: [ nextItem ]
+            };
+
+            if ( ! attrs.amazonTitle ) {
+                nextAttributes.amazonTitle = title;
+            }
+            if ( ! attrs.detailUrl && detailUrl ) {
+                nextAttributes.detailUrl = detailUrl;
+            }
+            if ( ( ! Array.isArray( attrs.images ) || ! attrs.images.length ) && images.length ) {
+                nextAttributes.images = images;
+                nextAttributes.selectedImageIndex = 0;
+            }
+            if ( ! attrs.badgeMode || attrs.badgeMode === 'auto' ) {
+                nextAttributes.badgeMode = suggestedBadgeMode;
+            }
+
+            editorDispatch.updateBlockAttributes( clientId, nextAttributes );
+        } ).catch( function ( error ) {
+            const message = error && error.message ? error.message : 'Hydration failed';
+            const liveBlock = getLiveHydrationBlock( editorSelect, clientId, asin );
+            if ( ! liveBlock ) {
+                return;
+            }
+            const attrs = liveBlock.attributes || {};
+            if ( attrs.loadState !== 'loading' ) {
+                return;
+            }
+            editorDispatch.updateBlockAttributes( clientId, {
+                loadState: 'error',
+                loadError: message
+            } );
+        } );
+    }
+
     function installAmazonParagraphTrigger() {
         if (
             ! window.wp ||
             ! window.wp.data ||
             ! window.wp.data.select ||
             ! window.wp.data.dispatch ||
-            ! window.wp.domReady
+            ! window.wp.domReady ||
+            ! window.fetch
         ) {
             return;
         }
@@ -69,6 +211,7 @@
 
                 const editorSelect = window.wp.data.select( 'core/block-editor' );
                 const editorDispatch = window.wp.data.dispatch( 'core/block-editor' );
+                const postSelect = window.wp.data.select( 'core/editor' );
 
                 if ( ! editorSelect || ! editorDispatch ) {
                     return;
@@ -113,14 +256,26 @@
                             );
                         }
                     } else {
+                        const replacementBlock = createBlock( 'meintechblog/affiliate-cards', {
+                            items: [ { asin: asin } ],
+                            badgeMode: 'auto',
+                            ctaLabel: 'Preis auf Amazon checken',
+                            autoShortenTitles: true,
+                            loadState: 'loading',
+                            loadError: ''
+                        } );
+
                         editorDispatch.replaceBlocks(
                             tokenBlock.clientId,
-                            createBlock( 'meintechblog/affiliate-cards', {
-                                items: [ { asin: asin } ],
-                                badgeMode: 'auto',
-                                ctaLabel: 'Preis auf Amazon checken',
-                                autoShortenTitles: true
-                            } )
+                            replacementBlock
+                        );
+
+                        hydrateAffiliateBlock(
+                            editorSelect,
+                            editorDispatch,
+                            replacementBlock.clientId,
+                            asin,
+                            postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0
                         );
                     }
                 } finally {
@@ -180,6 +335,16 @@
                 'div',
                 blockProps,
                 el( 'h3', {}, 'Affiliate Card' ),
+                attributes.loadState === 'loading' && el(
+                    'p',
+                    { className: 'mtb-affiliate-cards-editor__status' },
+                    'Produktdaten werden geladen...'
+                ),
+                attributes.loadState === 'error' && el(
+                    'p',
+                    { className: 'mtb-affiliate-cards-editor__warning' },
+                    attributes.loadError || 'Produktdaten konnten nicht geladen werden.'
+                ),
                 items.length > 1 && el(
                     'p',
                     { className: 'mtb-affiliate-cards-editor__warning' },
