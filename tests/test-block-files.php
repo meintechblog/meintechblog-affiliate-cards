@@ -182,6 +182,31 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'Produktdaten neu l
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__card')) {
+    fwrite(STDERR, "Editor should render a card shell instead of only a form wrapper.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__badge-area')) {
+    fwrite(STDERR, "Editor should render a dedicated badge area inside the card layout.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__media-area')) {
+    fwrite(STDERR, "Editor should render a dedicated media area inside the card layout.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__body-area')) {
+    fwrite(STDERR, "Editor should render a dedicated body area inside the card layout.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__cta-preview')) {
+    fwrite(STDERR, "Editor should render a CTA preview area inside the card layout.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($indexJsPath), "item.titleOverride || attributes.amazonTitle || item.title || item.asin")) {
     fwrite(STDERR, "Editor preview title should prefer override, then hydrated title, then ASIN fallback.\n");
     exit(1);

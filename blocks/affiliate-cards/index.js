@@ -311,6 +311,9 @@
             )
         );
         const activeImageUrl = images[ selectedImageIndex ] || item.image_url || '';
+        const previewTitle = item.titleOverride || attributes.amazonTitle || item.title || item.asin || 'Neue Karte';
+        const previewBenefit = item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.';
+        const ctaLabel = attributes.ctaLabel || 'Preis auf Amazon checken';
 
         function updateItem( key, value ) {
             props.setAttributes( {
@@ -388,10 +391,10 @@
                     } )
                 )
             ),
-            el(
-                'div',
-                blockProps,
-                el( 'h3', {}, 'Affiliate Card' ),
+                el(
+                    'div',
+                    blockProps,
+                    el( 'h3', {}, 'Affiliate Card' ),
                 attributes.loadState === 'loading' && el(
                     'p',
                     { className: 'mtb-affiliate-cards-editor__status' },
@@ -415,58 +418,80 @@
                 el(
                     'div',
                     { className: 'mtb-affiliate-cards-editor__item' },
-                    el( SelectControl, {
-                        label: 'Badge über dem Bild',
-                        value: attributes.badgeMode || 'auto',
-                        options: BADGE_OPTIONS,
-                        onChange: updateBadgeMode
-                    } ),
-                    el( TextControl, {
-                        label: 'ASIN',
-                        value: item.asin || '',
-                        onChange: function ( value ) {
-                            updateItem( 'asin', value );
-                        }
-                    } ),
-                    el( TextControl, {
-                        label: 'Kurztitel überschreiben',
-                        value: item.titleOverride || '',
-                        onChange: function ( value ) {
-                            updateItem( 'titleOverride', value );
-                        }
-                    } ),
-                    el( TextareaControl, {
-                        label: 'Nutzenzeile',
-                        value: item.benefit || '',
-                        onChange: function ( value ) {
-                            updateItem( 'benefit', value );
-                        }
-                    } ),
-                    images.length > 0 && el(
-                        'div',
-                        { className: 'mtb-affiliate-cards-editor__image' },
-                        el(
-                            'div',
-                            { className: 'mtb-affiliate-cards-editor__image-controls' },
-                            el(
-                                Button,
-                                { isSecondary: true, onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
-                                'Bild zurück'
-                            ),
-                            el( 'span', { className: 'mtb-affiliate-cards-editor__image-index' }, 'Bild ' + ( selectedImageIndex + 1 ) + ' / ' + images.length ),
-                            el(
-                                Button,
-                                { isSecondary: true, onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
-                                'Bild weiter'
-                            )
-                        ),
-                        el( 'img', { src: activeImageUrl, alt: item.titleOverride || attributes.amazonTitle || item.asin || 'Affiliate Card' } )
-                    ),
                     el(
                         'div',
-                        { className: 'mtb-affiliate-cards-editor__preview' },
-                        el( 'strong', {}, item.titleOverride || attributes.amazonTitle || item.title || item.asin || 'Neue Karte' ),
-                        el( 'p', {}, item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.' )
+                        { className: 'mtb-affiliate-cards-editor__card' },
+                        el(
+                            'div',
+                            { className: 'mtb-affiliate-cards-editor__badge-area' },
+                            el( SelectControl, {
+                                label: 'Badge über dem Bild',
+                                value: attributes.badgeMode || 'auto',
+                                options: BADGE_OPTIONS,
+                                onChange: updateBadgeMode
+                            } )
+                        ),
+                        el(
+                            'div',
+                            { className: 'mtb-affiliate-cards-editor__media-area' },
+                            el( TextControl, {
+                                label: 'ASIN',
+                                value: item.asin || '',
+                                onChange: function ( value ) {
+                                    updateItem( 'asin', value );
+                                }
+                            } ),
+                            images.length > 0 && el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__image' },
+                                el(
+                                    'div',
+                                    { className: 'mtb-affiliate-cards-editor__image-controls' },
+                                    el(
+                                        Button,
+                                        { isSecondary: true, onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
+                                        'Bild zurück'
+                                    ),
+                                    el( 'span', { className: 'mtb-affiliate-cards-editor__image-index' }, 'Bild ' + ( selectedImageIndex + 1 ) + ' / ' + images.length ),
+                                    el(
+                                        Button,
+                                        { isSecondary: true, onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
+                                        'Bild weiter'
+                                    )
+                                ),
+                                el( 'img', { src: activeImageUrl, alt: previewTitle } )
+                            )
+                        ),
+                        el(
+                            'div',
+                            { className: 'mtb-affiliate-cards-editor__body-area' },
+                            el( TextControl, {
+                                label: 'Kurztitel überschreiben',
+                                value: item.titleOverride || '',
+                                onChange: function ( value ) {
+                                    updateItem( 'titleOverride', value );
+                                }
+                            } ),
+                            el( TextareaControl, {
+                                label: 'Nutzenzeile',
+                                value: item.benefit || '',
+                                onChange: function ( value ) {
+                                    updateItem( 'benefit', value );
+                                }
+                            } ),
+                            el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__preview' },
+                                el( 'strong', {}, previewTitle ),
+                                el( 'p', {}, previewBenefit )
+                            ),
+                            el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__cta-preview' },
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__cta-label' }, ctaLabel ),
+                                el( 'span', { className: 'mtb-affiliate-cards-editor__cta-meta' }, 'Affiliate-Link' )
+                            )
+                        )
                     )
                 )
             )
