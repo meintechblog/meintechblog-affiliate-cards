@@ -27,6 +27,7 @@ final class MTB_Affiliate_Post_Processor {
 
     public function process(string $content): array {
         $asins = [];
+        $inlineAsins = [];
         $existingAttrs = [];
         $placeholderInserted = false;
 
@@ -46,12 +47,13 @@ final class MTB_Affiliate_Post_Processor {
 
         $processedContent = preg_replace_callback(
             self::PARAGRAPH_PATTERN,
-            static function (array $matches) use (&$asins, &$placeholderInserted): string {
+            static function (array $matches) use (&$asins, &$inlineAsins, &$placeholderInserted): string {
                 $innerText = trim(strip_tags(html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8')));
                 if (! preg_match(self::TOKEN_PATTERN, $innerText, $tokenMatch)) {
-                    $inlineAsins = self::extract_inline_asins($matches[1]);
-                    if ($inlineAsins !== []) {
-                        $asins = array_merge($asins, $inlineAsins);
+                    $foundInlineAsins = self::extract_inline_asins($matches[1]);
+                    if ($foundInlineAsins !== []) {
+                        $asins = array_merge($asins, $foundInlineAsins);
+                        $inlineAsins = array_merge($inlineAsins, $foundInlineAsins);
                     }
                     return $matches[0];
                 }
@@ -69,12 +71,23 @@ final class MTB_Affiliate_Post_Processor {
         );
 
         $uniqueAsins = array_values(array_unique($asins));
+        $uniqueInlineAsins = array_values(array_unique($inlineAsins));
 
         if ($uniqueAsins === []) {
             return [
                 'asins' => [],
                 'content' => $processedContent ?? $content,
             ];
+        }
+
+        if ($uniqueInlineAsins !== []) {
+            $inlineMap = $this->resolve_inline_items($uniqueInlineAsins, $existingAttrs);
+            if ($inlineMap !== []) {
+                $processedContent = $this->replace_inline_markers(
+                    $processedContent ?? $content,
+                    $inlineMap
+                );
+            }
         }
 
         $block = $this->serialize_block($uniqueAsins, $existingAttrs);
@@ -161,6 +174,100 @@ final class MTB_Affiliate_Post_Processor {
         ];
 
         return '<!-- wp:meintechblog/affiliate-cards ' . json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ' /-->';
+    }
+
+    private function resolve_inline_items(array $asins, array $existingAttrs): array {
+        $map = [];
+
+        $existingItems = $this->sanitize_items($existingAttrs['items'] ?? []);
+        foreach ($existingItems as $item) {
+            $asin = (string) $item['asin'];
+            if ($asin === '') {
+                continue;
+            }
+            $map[$asin] = $item;
+        }
+
+        if ($asins !== [] && is_callable($this->itemResolver)) {
+            $resolverResult = ($this->itemResolver)($asins);
+            if (is_array($resolverResult)) {
+                foreach ($this->sanitize_items($resolverResult) as $item) {
+                    $asin = (string) $item['asin'];
+                    if ($asin !== '') {
+                        $map[$asin] = $item;
+                    }
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    private function replace_inline_markers(string $content, array $resolvedItems): string {
+        return preg_replace_callback(
+            self::PARAGRAPH_PATTERN,
+            static function (array $matches) use ($resolvedItems): string {
+                $innerHtml = $matches[1];
+                $fragments = preg_split('/(<[^>]+>)/u', $innerHtml, -1, PREG_SPLIT_DELIM_CAPTURE);
+                if (! is_array($fragments)) {
+                    return $matches[0];
+                }
+
+                $tagStack = [];
+                foreach ($fragments as $index => $fragment) {
+                    if ($fragment === '') {
+                        continue;
+                    }
+
+                    if ($fragment[0] === '<') {
+                        if (preg_match('/^<\s*\/\s*([a-z0-9:-]+)/i', $fragment, $closingTag)) {
+                            $tagName = strtolower((string) $closingTag[1]);
+                            $position = array_search($tagName, $tagStack, true);
+                            if ($position !== false) {
+                                array_splice($tagStack, $position, 1);
+                            }
+                        } elseif (
+                            preg_match('/^<\s*([a-z0-9:-]+)/i', $fragment, $openingTag)
+                            && ! preg_match('/\/\s*>$/', $fragment)
+                        ) {
+                            $tagStack[] = strtolower((string) $openingTag[1]);
+                        }
+                        continue;
+                    }
+
+                    if (array_intersect($tagStack, ['a', 'code']) !== []) {
+                        continue;
+                    }
+
+                    $replaced = preg_replace_callback(
+                        self::INLINE_MARKER_PATTERN,
+                        static function (array $token) use ($resolvedItems): string {
+                            $asin = strtoupper((string) $token[1]);
+                            if (! isset($resolvedItems[$asin])) {
+                                return $token[0];
+                            }
+                            $item = $resolvedItems[$asin];
+                            $title = trim((string) ($item['title'] ?? ''));
+                            $detailUrl = trim((string) ($item['detail_url'] ?? ''));
+                            if ($title === '' || $detailUrl === '') {
+                                return $token[0];
+                            }
+                            $linkText = htmlspecialchars($title . ' (Affiliate-Link)', ENT_QUOTES, 'UTF-8');
+                            $href = htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8');
+                            return '<a href="' . $href . '" target="_blank" rel="nofollow noopener sponsored">' . $linkText . '</a>';
+                        },
+                        $fragment
+                    );
+
+                    if ($replaced !== null) {
+                        $fragments[$index] = $replaced;
+                    }
+                }
+
+                return str_replace($innerHtml, implode('', $fragments), $matches[0]);
+            },
+            $content
+        ) ?? $content;
     }
 
     private function decode_attrs(string $json): array {

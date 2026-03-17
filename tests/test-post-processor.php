@@ -92,6 +92,73 @@ assert_contains_processor('amazon:B0INLINE04', $inlineResult['content'], 'Inline
 assert_contains_processor('amazon:b0inline05', $inlineResult['content'], 'Lowercase inline markers should remain untouched in content.');
 assert_not_contains_processor('B0INLINE99', json_encode($inlineResult['asins']), 'Non-Amazon /dp/ASIN paths should not be collected.');
 
+$inlineResolverProcessor = new MTB_Affiliate_Post_Processor(
+    new MTB_Affiliate_Token_Scanner(),
+    [],
+    static function (array $asins): array {
+        $items = [];
+        foreach ($asins as $asin) {
+            $items[] = [
+                'asin' => $asin,
+                'title' => 'Amazon Titel ' . $asin,
+                'detail_url' => 'https://www.amazon.de/dp/' . $asin,
+            ];
+        }
+        return $items;
+    }
+);
+
+$inlineReplace = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Inline Start amazon:B0INLINE05, nochmal amazon:b0inline06 und am Ende amazon:B0INLINE05.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor(
+    'Inline Start <a href="https://www.amazon.de/dp/B0INLINE05"',
+    $inlineReplace['content'],
+    'Inline amazon:ASIN markers should be replaced with linked Amazon titles.'
+);
+assert_contains_processor(
+    'Amazon Titel B0INLINE06 (Affiliate-Link)',
+    $inlineReplace['content'],
+    'Inline replacement should include the resolved title and Affiliate-Link suffix even for lowercase markers.'
+);
+assert_not_contains_processor('amazon:B0INLINE05', $inlineReplace['content'], 'Inline amazon:ASIN markers should be removed after replacement.');
+assert_not_contains_processor('amazon:b0inline06', $inlineReplace['content'], 'Lowercase inline markers should also be removed after replacement.');
+
+$inlineReplaceMulti = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Absatz eins amazon:B0INLINE07 im Text.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Absatz zwei amazon:B0INLINE08 im Text.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor(
+    'Absatz eins <a href="https://www.amazon.de/dp/B0INLINE07"',
+    $inlineReplaceMulti['content'],
+    'Inline replacements should occur in every paragraph, not only the last one.'
+);
+assert_contains_processor(
+    'Absatz zwei <a href="https://www.amazon.de/dp/B0INLINE08"',
+    $inlineReplaceMulti['content'],
+    'Inline replacements should occur in every paragraph, not only the last one.'
+);
+
+$inlineProtected = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Bitte <code>amazon:B0INLINE09</code> so lassen und <a href="https://example.com">amazon:B0INLINE10</a> ebenfalls.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor('<code>amazon:B0INLINE09</code>', $inlineProtected['content'], 'Inline markers inside code tags should stay untouched.');
+assert_contains_processor('<a href="https://example.com">amazon:B0INLINE10</a>', $inlineProtected['content'], 'Inline markers inside existing links should stay untouched.');
+assert_not_contains_processor('https://www.amazon.de/dp/B0INLINE09', $inlineProtected['content'], 'Processor should not create Amazon links inside code tags.');
+assert_not_contains_processor('https://www.amazon.de/dp/B0INLINE10', $inlineProtected['content'], 'Processor should not nest Amazon links inside existing anchors.');
+
 $firstAffiliatePos = strpos($result['content'], '<!-- wp:meintechblog/affiliate-cards');
 $afterIntroPos = strpos($result['content'], '<p>Vor dem Block.</p>');
 $afterOutroPos = strpos($result['content'], '<p>Nach dem Block.</p>');
