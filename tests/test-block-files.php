@@ -207,6 +207,26 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
     exit(1);
 }
 
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__title-input')) {
+    fwrite(STDERR, "Editor should expose the title override as an inline card control.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__benefit-input')) {
+    fwrite(STDERR, "Editor should expose the benefit line as an inline card control.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), "label: i18n.__( 'Produkt-ASIN'")) {
+    fwrite(STDERR, "Editor inspector should expose the ASIN as a technical setting.\n");
+    exit(1);
+}
+
+if (str_contains((string) file_get_contents($indexJsPath), "label: 'ASIN'")) {
+    fwrite(STDERR, "Editor should no longer render the ASIN as a prominent inline field.\n");
+    exit(1);
+}
+
 if (! str_contains((string) file_get_contents($indexJsPath), "item.titleOverride || attributes.amazonTitle || item.title || item.asin")) {
     fwrite(STDERR, "Editor preview title should prefer override, then hydrated title, then ASIN fallback.\n");
     exit(1);

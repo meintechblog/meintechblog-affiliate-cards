@@ -20,6 +20,11 @@
     background: #f8f2e8;
 }
 
+.mtb-affiliate-cards-editor__title-input,
+.mtb-affiliate-cards-editor__benefit-input {
+    margin-bottom: 10px;
+}
+
 .mtb-affiliate-cards-editor__status {
     margin: 8px 0 10px;
     color: #5d513f;

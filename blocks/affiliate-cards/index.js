@@ -376,6 +376,13 @@
                 el(
                     PanelBody,
                     { title: i18n.__( 'Block-Einstellungen', 'meintechblog-affiliate-cards' ), initialOpen: true },
+                    el( TextControl, {
+                        label: i18n.__( 'Produkt-ASIN', 'meintechblog-affiliate-cards' ),
+                        value: item.asin || '',
+                        onChange: function ( value ) {
+                            updateItem( 'asin', value );
+                        }
+                    } ),
                     el( SelectControl, {
                         label: i18n.__( 'Badge-Modus', 'meintechblog-affiliate-cards' ),
                         value: attributes.badgeMode || 'auto',
@@ -388,7 +395,12 @@
                         onChange: function ( value ) {
                             props.setAttributes( { ctaLabel: value } );
                         }
-                    } )
+                    } ),
+                    el(
+                        Button,
+                        { isSecondary: true, onClick: retryHydration },
+                        i18n.__( 'Produktdaten neu laden', 'meintechblog-affiliate-cards' )
+                    )
                 )
             ),
                 el(
@@ -434,13 +446,6 @@
                         el(
                             'div',
                             { className: 'mtb-affiliate-cards-editor__media-area' },
-                            el( TextControl, {
-                                label: 'ASIN',
-                                value: item.asin || '',
-                                onChange: function ( value ) {
-                                    updateItem( 'asin', value );
-                                }
-                            } ),
                             images.length > 0 && el(
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__image' },
@@ -467,6 +472,7 @@
                             { className: 'mtb-affiliate-cards-editor__body-area' },
                             el( TextControl, {
                                 label: 'Kurztitel überschreiben',
+                                className: 'mtb-affiliate-cards-editor__title-input',
                                 value: item.titleOverride || '',
                                 onChange: function ( value ) {
                                     updateItem( 'titleOverride', value );
@@ -474,6 +480,7 @@
                             } ),
                             el( TextareaControl, {
                                 label: 'Nutzenzeile',
+                                className: 'mtb-affiliate-cards-editor__benefit-input',
                                 value: item.benefit || '',
                                 onChange: function ( value ) {
                                     updateItem( 'benefit', value );
