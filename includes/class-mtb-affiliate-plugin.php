@@ -193,13 +193,17 @@ final class MTB_Affiliate_Plugin {
         }
 
         try {
-            $partnerTag = $this->amazonClient->derive_partner_tag((string) ($post->post_date ?? ''));
-            $resolvedItems = $this->amazonClient->get_items($asins, [
-                'client_id' => $settings['client_id'],
-                'client_secret' => $settings['client_secret'],
-                'marketplace' => $settings['marketplace'],
-                'partner_tag' => $partnerTag,
-            ]);
+            $existingPartnerTag = $this->extract_existing_partner_tag((string) ($post->post_content ?? ''));
+            $derivedPartnerTag = $this->amazonClient->derive_partner_tag((string) ($post->post_date ?? ''));
+            $resolvedItems = $this->fetch_items_for_partner_tag($asins, $settings, $derivedPartnerTag);
+
+            if ($resolvedItems === [] && $existingPartnerTag !== null && $existingPartnerTag !== '' && $existingPartnerTag !== $derivedPartnerTag) {
+                $resolvedItems = $this->fetch_items_for_partner_tag($asins, $settings, $existingPartnerTag);
+            }
+
+            if ($resolvedItems === []) {
+                return $fallbackItems;
+            }
 
             $byAsin = [];
             foreach ($resolvedItems as $item) {
@@ -217,6 +221,38 @@ final class MTB_Affiliate_Plugin {
             );
         } catch (Throwable $exception) {
             return $fallbackItems;
+        }
+    }
+
+    private function extract_existing_partner_tag(string $content): ?string {
+        if ($content === '') {
+            return null;
+        }
+
+        if (! preg_match_all('/https?:\/\/(?:www\.)?amazon\.[^\s"\']+/i', $content, $matches)) {
+            return null;
+        }
+
+        foreach (($matches[0] ?? []) as $url) {
+            $tag = $this->amazonClient->extract_partner_tag((string) $url);
+            if ($tag !== null && $tag !== '') {
+                return $tag;
+            }
+        }
+
+        return null;
+    }
+
+    private function fetch_items_for_partner_tag(array $asins, array $settings, string $partnerTag): array {
+        try {
+            return $this->amazonClient->get_items($asins, [
+                'client_id' => $settings['client_id'],
+                'client_secret' => $settings['client_secret'],
+                'marketplace' => $settings['marketplace'],
+                'partner_tag' => $partnerTag,
+            ]);
+        } catch (Throwable $exception) {
+            return [];
         }
     }
 }

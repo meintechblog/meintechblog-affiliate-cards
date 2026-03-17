@@ -37,6 +37,34 @@ final class MTB_Affiliate_Amazon_Client {
         );
     }
 
+    public function extract_partner_tag(string $url): ?string {
+        $query = parse_url($url, PHP_URL_QUERY);
+        if (! is_string($query) || $query === '') {
+            return null;
+        }
+
+        parse_str($query, $params);
+        $tag = trim((string) ($params['tag'] ?? ''));
+        return $tag !== '' ? $tag : null;
+    }
+
+    public function resolve_partner_tag(string $postDate, string $existingTag = '', ?callable $validator = null): string {
+        $derivedTag = $this->derive_partner_tag($postDate);
+        $existingTag = trim($existingTag);
+
+        if ($validator !== null) {
+            if ($validator($derivedTag) === true) {
+                return $derivedTag;
+            }
+
+            if ($existingTag !== '') {
+                return $existingTag;
+            }
+        }
+
+        return $existingTag !== '' ? $existingTag : $derivedTag;
+    }
+
     public function get_items(array $asins, array $context): array {
         $asins = array_values(array_filter(array_unique(array_map('strval', $asins))));
         if ($asins === []) {

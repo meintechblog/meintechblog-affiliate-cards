@@ -81,6 +81,36 @@ assert_same_amazon(
     'Partner tag should be derived from the post date.'
 );
 
+assert_same_amazon(
+    'meintechblog-251107-21',
+    $client->extract_partner_tag('https://www.amazon.de/dp/B0TEST1234?tag=meintechblog-251107-21&linkCode=ogi'),
+    'Client should extract an existing partner tag from an Amazon URL.'
+);
+
+assert_same_amazon(
+    null,
+    $client->extract_partner_tag('https://www.amazon.de/dp/B0TEST1234'),
+    'Client should return null when an Amazon URL has no partner tag.'
+);
+
+assert_same_amazon(
+    'meintechblog-260317-21',
+    $client->resolve_partner_tag('2026-03-17T10:38:49', 'meintechblog-251107-21', static fn(string $tag): bool => $tag === 'meintechblog-260317-21'),
+    'Client should prefer the derived datestamp tag when validation succeeds.'
+);
+
+assert_same_amazon(
+    'meintechblog-251107-21',
+    $client->resolve_partner_tag('2026-03-17T10:38:49', 'meintechblog-251107-21', static fn(string $tag): bool => false),
+    'Client should fall back to the existing functional tag when the derived tag is rejected.'
+);
+
+assert_same_amazon(
+    'meintechblog-260317-21',
+    $client->resolve_partner_tag('2026-03-17T10:38:49', '', static fn(string $tag): bool => false),
+    'Client should still return the derived tag when no existing fallback tag is available.'
+);
+
 $items = $client->get_items(
     ['B0DF2KFDC8'],
     [
