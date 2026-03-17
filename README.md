@@ -33,7 +33,7 @@ Im Gutenberg-Editor:
 
 1. Du schreibst in einen leeren Absatz genau `amazon:ASIN`
 2. Du bestätigst den Absatz, typischerweise mit `Enter`
-3. Der Absatz wird direkt im Editor durch einen nativen `Affiliate Cards`-Block ersetzt
+3. Der Absatz wird direkt im Editor durch einen nativen `Affiliate Card`-Block ersetzt
 4. Existiert die ASIN im Beitrag bereits, wird kein doppelter Block erzeugt
 5. Produktdaten kommen im Renderpfad aus der Amazon Creators API
 6. Titel werden automatisch auf das aktuelle kurze Live-Niveau gekürzt
@@ -63,11 +63,11 @@ Alternativ kann der komplette Repo-Inhalt unter `wp-content/plugins/meintechblog
 Die kurze Version:
 
 1. Plugin in WordPress aktivieren
-2. Unter `Einstellungen -> Affiliate Cards` die Amazon-Credentials eintragen und speichern
+2. Unter `Einstellungen -> Affiliate Card` die Amazon-Credentials eintragen und speichern
 3. Einen Beitrag im Block-Editor öffnen
 4. In einen leeren Absatz genau `amazon:B0D7955R6N` schreiben
 5. `Enter` drücken
-6. Das Plugin ersetzt den Absatz direkt im Editor durch einen `Affiliate Cards`-Block
+6. Das Plugin ersetzt den Absatz direkt im Editor durch einen `Affiliate Card`-Block
 
 ### So testest du es am einfachsten
 
@@ -89,7 +89,7 @@ Die automatische Erkennung greift nur, wenn der Absatz exakt `amazon:ASIN` enth�
 
 ### Manuelle Nutzung
 
-Du kannst den `Affiliate Cards`-Block auch direkt im Editor einfügen und Produkte dort pflegen.
+Du kannst den `Affiliate Card`-Block auch direkt im Editor einfügen und genau ein Produkt darin pflegen.
 
 Mehr dazu steht in [HOWTO-USE.md](/Users/hulki/codex/meintechblog-affiliate-cards/docs/HOWTO-USE.md) und [EDITOR-WORKFLOW.md](/Users/hulki/codex/meintechblog-affiliate-cards/docs/EDITOR-WORKFLOW.md).
 

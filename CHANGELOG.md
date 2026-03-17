@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+- zieht den Editor-Flow auf echte Einzelkarten um: ein `Affiliate Card`-Block steht jetzt fuer genau ein Produkt
+- stellt user-facing Naming in Block, Settings und Doku auf `Affiliate Card` singular um
+- haelt bestehende Alt-Bloecke im Editor erkennbar, damit sie bei Bedarf in einzelne Karten aufgeteilt werden koennen
+
 ## 0.2.4
 
 - gibt dem dynamischen Affiliate-Block den nötigen WordPress-Post-Kontext (`postId`, `postType`) für Live-Enrichment neuer Produkte

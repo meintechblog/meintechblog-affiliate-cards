@@ -137,25 +137,12 @@
     function AffiliateCardsEdit( props ) {
         const attributes = props.attributes;
         const items = attributes.items || [];
+        const item = items[ 0 ] || { asin: '', benefit: '', titleOverride: '' };
         const blockProps = useBlockProps( { className: 'mtb-affiliate-cards-editor' } );
 
-        function updateItem( index, key, value ) {
-            const nextItems = items.slice();
-            nextItems[ index ] = Object.assign( {}, nextItems[ index ], { [ key ]: value } );
-            props.setAttributes( { items: nextItems } );
-        }
-
-        function addItem() {
+        function updateItem( key, value ) {
             props.setAttributes( {
-                items: items.concat( [ { asin: '', benefit: '', titleOverride: '' } ] )
-            } );
-        }
-
-        function removeItem( index ) {
-            props.setAttributes( {
-                items: items.filter( function ( _, itemIndex ) {
-                    return itemIndex !== index;
-                } )
+                items: [ Object.assign( {}, item, { [ key ]: value } ) ]
             } );
         }
 
@@ -192,57 +179,42 @@
             el(
                 'div',
                 blockProps,
-                el( 'h3', {}, 'Affiliate Cards' ),
-                items.map( function ( item, index ) {
-                    return el(
-                        'div',
-                        { key: index, className: 'mtb-affiliate-cards-editor__item' },
-                        el( TextControl, {
-                            label: 'ASIN',
-                            value: item.asin || '',
-                            onChange: function ( value ) {
-                                updateItem( index, 'asin', value );
-                            }
-                        } ),
-                        el( TextControl, {
-                            label: 'Kurztitel überschreiben',
-                            value: item.titleOverride || '',
-                            onChange: function ( value ) {
-                                updateItem( index, 'titleOverride', value );
-                            }
-                        } ),
-                        el( TextareaControl, {
-                            label: 'Nutzenzeile',
-                            value: item.benefit || '',
-                            onChange: function ( value ) {
-                                updateItem( index, 'benefit', value );
-                            }
-                        } ),
-                        el(
-                            'div',
-                            { className: 'mtb-affiliate-cards-editor__preview' },
-                            el( 'strong', {}, item.titleOverride || item.asin || 'Neue Karte' ),
-                            el( 'p', {}, item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.' )
-                        ),
-                        el(
-                            Button,
-                            {
-                                isDestructive: true,
-                                onClick: function () {
-                                    removeItem( index );
-                                }
-                            },
-                            'Produkt entfernen'
-                        )
-                    );
-                } ),
+                el( 'h3', {}, 'Affiliate Card' ),
+                items.length > 1 && el(
+                    'p',
+                    { className: 'mtb-affiliate-cards-editor__warning' },
+                    'Dieser Alt-Block enthält mehrere Produkte. Bitte in einzelne Affiliate Cards aufteilen.'
+                ),
                 el(
-                    Button,
-                    {
-                        variant: 'primary',
-                        onClick: addItem
-                    },
-                    'Produkt hinzufügen'
+                    'div',
+                    { className: 'mtb-affiliate-cards-editor__item' },
+                    el( TextControl, {
+                        label: 'ASIN',
+                        value: item.asin || '',
+                        onChange: function ( value ) {
+                            updateItem( 'asin', value );
+                        }
+                    } ),
+                    el( TextControl, {
+                        label: 'Kurztitel überschreiben',
+                        value: item.titleOverride || '',
+                        onChange: function ( value ) {
+                            updateItem( 'titleOverride', value );
+                        }
+                    } ),
+                    el( TextareaControl, {
+                        label: 'Nutzenzeile',
+                        value: item.benefit || '',
+                        onChange: function ( value ) {
+                            updateItem( 'benefit', value );
+                        }
+                    } ),
+                    el(
+                        'div',
+                        { className: 'mtb-affiliate-cards-editor__preview' },
+                        el( 'strong', {}, item.titleOverride || item.asin || 'Neue Karte' ),
+                        el( 'p', {}, item.benefit || 'Nutzenzeile erscheint hier in der Vorschau.' )
+                    )
                 )
             )
         );

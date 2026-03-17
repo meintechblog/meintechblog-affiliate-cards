@@ -6,9 +6,12 @@ $blockJsonPath = dirname(__DIR__) . '/blocks/affiliate-cards/block.json';
 $editJsPath = dirname(__DIR__) . '/blocks/affiliate-cards/edit.js';
 $indexJsPath = dirname(__DIR__) . '/blocks/affiliate-cards/index.js';
 $templatePath = dirname(__DIR__) . '/templates/affiliate-cards.php';
+$pluginClassPath = dirname(__DIR__) . '/includes/class-mtb-affiliate-plugin.php';
+$readmePath = dirname(__DIR__) . '/README.md';
+$howtoPath = dirname(__DIR__) . '/docs/HOWTO-USE.md';
 
-if (! file_exists($blockJsonPath) || ! file_exists($editJsPath) || ! file_exists($indexJsPath) || ! file_exists($templatePath)) {
-    fwrite(STDERR, "Expected block.json, index.js, edit.js and template files to exist.\n");
+if (! file_exists($blockJsonPath) || ! file_exists($editJsPath) || ! file_exists($indexJsPath) || ! file_exists($templatePath) || ! file_exists($pluginClassPath) || ! file_exists($readmePath) || ! file_exists($howtoPath)) {
+    fwrite(STDERR, "Expected block, template, plugin class and docs files to exist.\n");
     exit(1);
 }
 
@@ -16,6 +19,11 @@ $config = json_decode((string) file_get_contents($blockJsonPath), true, 512, JSO
 
 if (($config['name'] ?? '') !== 'meintechblog/affiliate-cards') {
     fwrite(STDERR, "Block name is wrong.\n");
+    exit(1);
+}
+
+if (($config['title'] ?? '') !== 'Affiliate Card') {
+    fwrite(STDERR, "Block title should use the singular Affiliate Card naming.\n");
     exit(1);
 }
 
@@ -41,6 +49,26 @@ if (! str_contains((string) file_get_contents($editJsPath), 'InspectorControls')
 
 if (! str_contains((string) file_get_contents($indexJsPath), 'amazon:')) {
     fwrite(STDERR, "Editor index should detect amazon:ASIN triggers.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'Affiliate Card')) {
+    fwrite(STDERR, "Editor index should use the singular Affiliate Card naming.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($pluginClassPath), 'Affiliate Card')) {
+    fwrite(STDERR, "Settings UI should use the singular Affiliate Card naming.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($readmePath), '`Affiliate Card`-Block')) {
+    fwrite(STDERR, "README should describe the singular Affiliate Card block.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($howtoPath), '`Affiliate Card`-Block')) {
+    fwrite(STDERR, "How-to should describe the singular Affiliate Card block.\n");
     exit(1);
 }
 

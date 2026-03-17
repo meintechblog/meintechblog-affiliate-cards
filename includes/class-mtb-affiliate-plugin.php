@@ -49,8 +49,8 @@ final class MTB_Affiliate_Plugin {
         }
 
         add_options_page(
-            'Affiliate Cards',
-            'Affiliate Cards',
+            'Affiliate Card',
+            'Affiliate Card',
             'manage_options',
             'mtb-affiliate-cards',
             [$this, 'render_settings_page']
@@ -78,8 +78,8 @@ final class MTB_Affiliate_Plugin {
         $settings = $this->settings->get_all();
         ?>
         <div class="wrap">
-            <h1>Affiliate Cards</h1>
-            <p>Grundkonfiguration für die nativen Amazon-Affiliate-Karten auf meintechblog.de.</p>
+            <h1>Affiliate Card</h1>
+            <p>Grundkonfiguration fuer die nativen Amazon-Affiliate-Cards auf meintechblog.de.</p>
             <form method="post" action="options.php">
                 <?php if (function_exists('settings_fields')) : ?>
                     <?php settings_fields($this->settings->settings_group()); ?>
