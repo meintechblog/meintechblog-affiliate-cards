@@ -173,8 +173,18 @@ if (! str_contains((string) file_get_contents($indexJsPath), "label: 'Beschreibu
     exit(1);
 }
 
-if (! str_contains((string) file_get_contents($indexJsPath), "'<'") || ! str_contains((string) file_get_contents($indexJsPath), "'>'")) {
-    fwrite(STDERR, "Editor should provide compact < and > controls for image selection.\n");
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__head-meta')) {
+    fwrite(STDERR, "Editor should place ASIN and badge in a shared header meta row.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-cards-editor__image-arrow-icon')) {
+    fwrite(STDERR, "Editor should render dedicated icon markup for image navigation.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'Vorheriges Bild') || ! str_contains((string) file_get_contents($indexJsPath), 'Nächstes Bild')) {
+    fwrite(STDERR, "Editor should provide accessible labels for the image navigation buttons.\n");
     exit(1);
 }
 
@@ -320,6 +330,16 @@ if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-c
 
 if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__cta-link')) {
     fwrite(STDERR, "Editor CSS should style the CTA link like the frontend button.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__head-meta')) {
+    fwrite(STDERR, "Editor CSS should lay out ASIN and badge cleanly in the header row.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($editorCssPath), '.mtb-affiliate-cards-editor__image-arrow-icon')) {
+    fwrite(STDERR, "Editor CSS should style the chevron icons for image navigation.\n");
     exit(1);
 }
 

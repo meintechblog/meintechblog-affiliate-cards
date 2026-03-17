@@ -371,6 +371,25 @@
             );
         }
 
+        function renderChevron( direction ) {
+            return el(
+                'span',
+                { className: 'mtb-affiliate-cards-editor__image-arrow-icon', 'aria-hidden': true },
+                el(
+                    'svg',
+                    { viewBox: '0 0 20 20', width: 16, height: 16, focusable: false },
+                    el( 'path', {
+                        d: direction === 'left' ? 'M12.5 4.5L7 10l5.5 5.5' : 'M7.5 4.5L13 10l-5.5 5.5',
+                        fill: 'none',
+                        stroke: 'currentColor',
+                        'stroke-width': 2.2,
+                        'stroke-linecap': 'round',
+                        'stroke-linejoin': 'round'
+                    } )
+                )
+            );
+        }
+
         return el(
             element.Fragment,
             {},
@@ -422,9 +441,12 @@
                         el(
                             'div',
                             { className: 'mtb-affiliate-cards-editor__card' },
+                        el(
+                            'div',
+                            { className: 'mtb-affiliate-cards-editor__head' },
                             el(
                                 'div',
-                                { className: 'mtb-affiliate-cards-editor__head' },
+                                { className: 'mtb-affiliate-cards-editor__head-meta' },
                                 el( TextControl, {
                                     label: 'ASIN',
                                     className: 'mtb-affiliate-cards-editor__asin-input',
@@ -432,17 +454,18 @@
                                     onChange: function ( value ) {
                                         updateItem( 'asin', value.trim().toUpperCase() );
                                     }
-                                } )
-                            ),
-                            el(
-                                'div',
-                                { className: 'mtb-affiliate-cards-editor__badge-area' },
-                                el( SelectControl, {
-                                    label: 'Badge über dem Bild',
-                                value: attributes.badgeMode || 'auto',
-                                options: BADGE_OPTIONS,
-                                onChange: updateBadgeMode
-                            } )
+                                } ),
+                                el(
+                                    'div',
+                                    { className: 'mtb-affiliate-cards-editor__badge-area' },
+                                    el( SelectControl, {
+                                        label: 'Badge über dem Bild',
+                                        value: attributes.badgeMode || 'auto',
+                                        options: BADGE_OPTIONS,
+                                        onChange: updateBadgeMode
+                                    } )
+                                )
+                            )
                         ),
                         el(
                             'div',
@@ -460,14 +483,14 @@
                                     { className: 'mtb-affiliate-cards-editor__image-controls' },
                                     el(
                                         Button,
-                                        { isSecondary: true, className: 'mtb-affiliate-cards-editor__image-arrow', onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
-                                        '<'
+                                        { isSecondary: true, className: 'mtb-affiliate-cards-editor__image-arrow', 'aria-label': 'Vorheriges Bild', onClick: function () { selectImage( selectedImageIndex - 1 ); }, disabled: images.length < 2 },
+                                        renderChevron( 'left' )
                                     ),
                                     el( 'span', { className: 'mtb-affiliate-cards-editor__image-index' }, 'Bild ' + ( selectedImageIndex + 1 ) + ' / ' + images.length ),
                                     el(
                                         Button,
-                                        { isSecondary: true, className: 'mtb-affiliate-cards-editor__image-arrow', onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
-                                        '>'
+                                        { isSecondary: true, className: 'mtb-affiliate-cards-editor__image-arrow', 'aria-label': 'Nächstes Bild', onClick: function () { selectImage( selectedImageIndex + 1 ); }, disabled: images.length < 2 },
+                                        renderChevron( 'right' )
                                     )
                                 ),
                                 el( 'img', { src: activeImageUrl, alt: previewTitle } )

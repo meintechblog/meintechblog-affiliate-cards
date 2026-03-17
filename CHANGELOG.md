@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.11
+
+- richtet ASIN-Feld und Badge im Editor in einer gemeinsamen Header-Zeile aus, damit sich beides nicht mehr ueberlappt
+- ersetzt die rohen `<`/`>`-Bildknuepfe durch echte Chevron-Icon-Buttons mit sauberem Hover- und Disabled-State
+- zieht die Bildflaeche nach oben nach, damit der Header mehr Luft bekommt und die Editor-Card ruhiger wirkt
+
 ## 0.2.10
 
 - zieht die editierbare ASIN als zentrales Feld ganz nach oben in die Editor-Card
