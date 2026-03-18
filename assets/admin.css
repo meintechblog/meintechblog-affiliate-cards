@@ -78,6 +78,11 @@
     color: #075985;
 }
 
+.mtb-affiliate-status-badge.is-legacy {
+    background: #f5ead7;
+    color: #8a5a14;
+}
+
 .mtb-affiliate-status-badge.is-geradegezogen {
     background: #ecfccb;
     color: #3f6212;

@@ -47,6 +47,13 @@ $GLOBALS['mtb_posts'] = [
         'post_status' => 'publish',
         'post_title' => 'Audit Derived Tag Invalid',
     ],
+    14 => (object) [
+        'ID' => 14,
+        'post_date' => '2017-10-31 15:00:27',
+        'post_content' => '<!-- wp:paragraph --><p>Alt-Link: <a href="https://www.amazon.de/dp/B0VALID001?tag=meintechblog-171031-21">Legacy Product (Affiliate-Link)</a>.</p><!-- /wp:paragraph -->',
+        'post_status' => 'publish',
+        'post_title' => 'Audit Legacy Candidate',
+    ],
 ];
 
 function get_option(string $name, $default = false) {
@@ -171,6 +178,9 @@ $checked = $auditMethod->invoke($plugin, 10, false);
 assert_same_actions('geprueft', $checked['status'] ?? null, 'Check action should mark valid content as geprueft.');
 assert_same_actions(null, $GLOBALS['mtb_updated_post'], 'Check action must not update post content.');
 assert_same_actions('geprueft', $GLOBALS['mtb_post_meta'][10]['_mtb_affiliate_audit']['status'] ?? null, 'Check action should persist audit meta.');
+
+$legacyChecked = $auditMethod->invoke($plugin, 14, false);
+assert_same_actions('legacy', $legacyChecked['status'] ?? null, 'Check action should mark old unresolved affiliate-only content as legacy when no safe card can be created.');
 
 $GLOBALS['mtb_updated_post'] = null;
 $straightened = $auditMethod->invoke($plugin, 10, true);

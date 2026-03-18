@@ -53,6 +53,17 @@ $emptyLog = $service->build_short_log([
 
 assert_same_audit('Keine Affiliate-Funde', $emptyLog, 'Short log should clearly show when a post has no affiliate finds.');
 
+$legacyLog = $service->build_short_log([
+    'counts' => [
+        'affiliate_finds' => 8,
+        'card_blocks' => 0,
+    ],
+    'tracking' => 'ok',
+    'status' => 'legacy',
+]);
+
+assert_same_audit('Legacy-Fall: Affiliate-Links erkannt, aber keine sichere Auto-Card moeglich', $legacyLog, 'Short log should clearly explain legacy affiliate cases.');
+
 $scan = $service->scan_post_content(<<<HTML
 <!-- wp:paragraph -->
 <p>Inline-Link <a href="https://www.amazon.de/dp/B0TRACK001?tag=meintechblog-260318-21">Produkt</a> und Marker amazon:B0MARKER01.</p>

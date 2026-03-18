@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MeinTechBlog Affiliate Cards
  * Description: Native Gutenberg affiliate cards for Amazon products on meintechblog.de.
- * Version: 0.2.26
+ * Version: 0.2.27
  * Author: meintechblog.de
  */
 
@@ -12,7 +12,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('MTB_AFFILIATE_CARDS_VERSION', '0.2.26');
+define('MTB_AFFILIATE_CARDS_VERSION', '0.2.27');
 define('MTB_AFFILIATE_CARDS_FILE', __FILE__);
 define('MTB_AFFILIATE_CARDS_DIR', plugin_dir_path(__FILE__));
 define('MTB_AFFILIATE_CARDS_URL', plugin_dir_url(__FILE__));

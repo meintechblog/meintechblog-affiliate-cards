@@ -159,6 +159,7 @@ final class MTB_Affiliate_Plugin {
         $rows = $this->filter_audit_rows($this->auditService->list_recent_rows(50), $search, $statusFilter);
         $summary = [
             'Offen' => 0,
+            'Legacy-Fälle' => 0,
             'Manuell prüfen' => 0,
             'Geradegezogen' => 0,
             'Fehler' => 0,
@@ -166,7 +167,9 @@ final class MTB_Affiliate_Plugin {
 
         foreach ($rows as $row) {
             $status = (string) ($row['status'] ?? '');
-            if ($status === 'manuell_pruefen') {
+            if ($status === 'legacy') {
+                $summary['Legacy-Fälle']++;
+            } elseif ($status === 'manuell_pruefen') {
                 $summary['Manuell prüfen']++;
             } elseif ($status === 'geradegezogen') {
                 $summary['Geradegezogen']++;
@@ -194,6 +197,7 @@ final class MTB_Affiliate_Plugin {
                 <select name="mtb-audit-status">
                     <option value="">Alle Stati</option>
                     <option value="offen" <?php echo selected($statusFilter, 'offen'); ?>>Offen</option>
+                    <option value="legacy" <?php echo selected($statusFilter, 'legacy'); ?>>Legacy-Fälle</option>
                     <option value="manuell_pruefen" <?php echo selected($statusFilter, 'manuell_pruefen'); ?>>Manuell prüfen</option>
                     <option value="geradegezogen" <?php echo selected($statusFilter, 'geradegezogen'); ?>>Geradegezogen</option>
                     <option value="fehler" <?php echo selected($statusFilter, 'fehler'); ?>>Fehler</option>
@@ -374,12 +378,21 @@ final class MTB_Affiliate_Plugin {
         $state = $this->auditService->scan_post_content($content);
         $hasUnresolvedMarkers = strpos($content, 'amazon:') !== false;
         $trackingIssue = ($state['tracking'] ?? '') === 'abweichend';
+        $legacyCandidate = ! $hasUnresolvedMarkers
+            && (int) ($state['counts']['affiliate_finds'] ?? 0) > 0
+            && (int) ($state['counts']['card_blocks'] ?? 0) === 0;
 
         if ($straighten) {
             $state['status'] = ($hasUnresolvedMarkers || $trackingIssue) ? 'manuell_pruefen' : 'geradegezogen';
             $state['timestamps']['straightened_at'] = gmdate('c');
         } else {
-            $state['status'] = $trackingIssue ? 'manuell_pruefen' : 'geprueft';
+            if ($trackingIssue) {
+                $state['status'] = 'manuell_pruefen';
+            } elseif ($legacyCandidate) {
+                $state['status'] = 'legacy';
+            } else {
+                $state['status'] = 'geprueft';
+            }
         }
 
         $state['timestamps']['checked_at'] = gmdate('c');
@@ -608,6 +621,7 @@ final class MTB_Affiliate_Plugin {
     private function human_audit_status(string $status): string {
         $map = [
             'offen' => 'Offen',
+            'legacy' => 'Legacy-Fall',
             'geprueft' => 'Geprüft',
             'geradegezogen' => 'Geradegezogen',
             'manuell_pruefen' => 'Manuell prüfen',

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.27
+
+- führt im Audit den Status `Legacy-Fall` für alte Affiliate-Beiträge ein, die heute nicht mehr sicher automatisch in Cards umgewandelt werden können
+- zeigt diese Fälle separat in Summary, Filter und Kurzlog statt sie wie normale offene Beiträge wirken zu lassen
+
 ## 0.2.26
 
 - klassifiziert Beiträge ohne Affiliate-Funde im Audit jetzt als unkritisch statt als `Unklar`

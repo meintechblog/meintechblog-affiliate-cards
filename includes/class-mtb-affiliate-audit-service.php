@@ -33,6 +33,10 @@ final class MTB_Affiliate_Audit_Service {
             return 'Keine Affiliate-Funde';
         }
 
+        if (($state['status'] ?? '') === 'legacy') {
+            return 'Legacy-Fall: Affiliate-Links erkannt, aber keine sichere Auto-Card moeglich';
+        }
+
         $parts = [
             sprintf('%d Affiliate-Funde', $finds),
             sprintf('%d Cards', $cards),
