@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 final class MTB_Affiliate_Post_Processor {
-    private const PARAGRAPH_PATTERN = '/<!-- wp:paragraph\b.*?-->\s*<p>(.*?)<\/p>\s*<!-- \/wp:paragraph -->\s*/su';
+    private const PARAGRAPH_PATTERN = '/(?:<!-- wp:paragraph\b.*?-->\s*)?<p>(.*?)<\/p>(?:\s*<!-- \/wp:paragraph -->)?\s*/su';
+    private const MORE_PATTERN = '/(?:<!-- wp:more\b.*?-->.*?<!-- \/wp:more -->|<!--more-->)/su';
     private const TOKEN_PATTERN = '/^(?:amazon:)?([A-Z0-9]{10})$/';
     private const INLINE_MARKER_PATTERN = '/\bamazon:([A-Z0-9]{10})\b/i';
     private const INLINE_LINK_PATTERN = '/href=(["\'])https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})(?:[?\/"\']|$)/i';
+    private const INLINE_LINK_CAPTURE_PATTERN = '/<a\b[^>]*href=(["\'])(https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})[^"\']*)\1[^>]*>(.*?)<\/a>/isu';
     private const BLOCK_PATTERN = '/<!-- wp:meintechblog\/affiliate-cards(?:\s+({.*?}))?\s*\/-->\s*/su';
     private const PLACEHOLDER = '__MTB_AFFILIATE_BLOCK__';
 
@@ -30,6 +32,8 @@ final class MTB_Affiliate_Post_Processor {
         $standaloneAsins = [];
         $inlineAsins = [];
         $inlinePlaceholders = [];
+        $inlineCardAsins = [];
+        $inlineFallbackItems = [];
         $existingAttrs = [];
         $placeholderInserted = false;
         $inlinePlaceholderIndex = 0;
@@ -50,18 +54,30 @@ final class MTB_Affiliate_Post_Processor {
 
         $processedContent = preg_replace_callback(
             self::PARAGRAPH_PATTERN,
-            static function (array $matches) use (&$asins, &$standaloneAsins, &$inlineAsins, &$inlinePlaceholders, &$placeholderInserted, &$inlinePlaceholderIndex): string {
+            static function (array $matches) use (&$asins, &$standaloneAsins, &$inlineAsins, &$inlinePlaceholders, &$inlineCardAsins, &$inlineFallbackItems, &$placeholderInserted, &$inlinePlaceholderIndex): string {
                 $innerText = trim(strip_tags(html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8')));
                 if (! preg_match(self::TOKEN_PATTERN, $innerText, $tokenMatch)) {
                     $foundInlineAsins = self::extract_inline_asins($matches[1]);
                     if ($foundInlineAsins !== []) {
                         $asins = array_merge($asins, $foundInlineAsins);
                         $inlineAsins = array_merge($inlineAsins, $foundInlineAsins);
+                        foreach (self::extract_inline_fallback_items($matches[1]) as $asin => $fallbackItem) {
+                            if (! isset($inlineFallbackItems[$asin])) {
+                                $inlineFallbackItems[$asin] = $fallbackItem;
+                            }
+                        }
                         $placeholders = [];
                         foreach ($foundInlineAsins as $asin) {
+                            if (isset($inlineCardAsins[$asin])) {
+                                continue;
+                            }
+                            $inlineCardAsins[$asin] = true;
                             $placeholder = self::build_inline_placeholder(++$inlinePlaceholderIndex, $asin, $matches[0]);
                             $inlinePlaceholders[$placeholder] = $asin;
                             $placeholders[] = $placeholder;
+                        }
+                        if ($placeholders === []) {
+                            return $matches[0];
                         }
                         return $matches[0] . "\n\n" . implode("\n\n", $placeholders) . "\n\n";
                     }
@@ -93,13 +109,18 @@ final class MTB_Affiliate_Post_Processor {
         }
 
         if ($uniqueInlineAsins !== []) {
-            $inlineMap = $this->resolve_inline_items($uniqueInlineAsins, $existingAttrs);
+            $inlineMap = $this->resolve_inline_items($uniqueInlineAsins, $existingAttrs, $inlineFallbackItems);
             if ($inlineMap !== []) {
                 $processedContent = $this->replace_inline_markers(
                     $processedContent ?? $content,
                     $inlineMap
                 );
             }
+
+            $processedContent = $this->relocate_intro_inline_placeholders(
+                $processedContent ?? $content,
+                array_keys($inlinePlaceholders)
+            );
 
             if ($inlinePlaceholders !== []) {
                 foreach ($inlinePlaceholders as $placeholder => $asin) {
@@ -125,6 +146,47 @@ final class MTB_Affiliate_Post_Processor {
         ];
     }
 
+    private function relocate_intro_inline_placeholders(string $content, array $placeholders): string {
+        if ($content === '' || $placeholders === []) {
+            return $content;
+        }
+
+        if (! preg_match(self::MORE_PATTERN, $content, $moreMatch, PREG_OFFSET_CAPTURE)) {
+            return $content;
+        }
+
+        $moreMarkup = (string) ($moreMatch[0][0] ?? '');
+        $moreOffset = (int) ($moreMatch[0][1] ?? -1);
+        if ($moreMarkup === '' || $moreOffset < 0) {
+            return $content;
+        }
+
+        $beforeMore = substr($content, 0, $moreOffset);
+        $afterMore = substr($content, $moreOffset + strlen($moreMarkup));
+        if ($beforeMore === false || $afterMore === false) {
+            return $content;
+        }
+
+        $moved = [];
+        foreach ($placeholders as $placeholder) {
+            if (! is_string($placeholder) || $placeholder === '' || strpos($beforeMore, $placeholder) === false) {
+                continue;
+            }
+
+            $moved[] = $placeholder;
+            $beforeMore = str_replace($placeholder, '', $beforeMore);
+        }
+
+        if ($moved === []) {
+            return $content;
+        }
+
+        $beforeMore = preg_replace("/\n{3,}/", "\n\n", $beforeMore) ?? $beforeMore;
+        $insertion = implode("\n\n", $moved);
+
+        return rtrim($beforeMore) . "\n\n" . $moreMarkup . "\n\n" . $insertion . ltrim($afterMore);
+    }
+
     private static function extract_inline_asins(string $html): array {
         $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $found = [];
@@ -138,6 +200,10 @@ final class MTB_Affiliate_Post_Processor {
                 }
 
                 if ($fragment[0] === '<') {
+                    if (preg_match('/^<\s*a\b/i', $fragment) && preg_match(self::INLINE_LINK_PATTERN, $fragment, $linkMatch)) {
+                        $found[] = strtoupper((string) $linkMatch[2]);
+                    }
+
                     if (preg_match('/^<\s*\/\s*([a-z0-9:-]+)/i', $fragment, $closingTag)) {
                         $tagName = strtolower((string) $closingTag[1]);
                         $position = array_search($tagName, $tagStack, true);
@@ -165,17 +231,39 @@ final class MTB_Affiliate_Post_Processor {
             }
         }
 
-        if (preg_match_all(self::INLINE_LINK_PATTERN, $decoded, $matches)) {
-            foreach ($matches[2] as $asin) {
-                $found[] = strtoupper($asin);
-            }
-        }
-
         if ($found === []) {
             return [];
         }
 
         return array_values(array_unique($found));
+    }
+
+    private static function extract_inline_fallback_items(string $html): array {
+        if (! preg_match_all(self::INLINE_LINK_CAPTURE_PATTERN, $html, $matches, PREG_SET_ORDER)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($matches as $match) {
+            $asin = strtoupper(trim((string) ($match[3] ?? '')));
+            $detailUrl = html_entity_decode((string) ($match[2] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $title = trim(strip_tags(html_entity_decode((string) ($match[4] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+            $title = preg_replace('/\s*\(Affiliate-Link\)\s*$/iu', '', $title) ?? $title;
+            if ($asin === '' || $detailUrl === '' || $title === '' || isset($items[$asin])) {
+                continue;
+            }
+
+            $items[$asin] = [
+                'asin' => $asin,
+                'title' => $title,
+                'detail_url' => $detailUrl,
+                'image_url' => '',
+                'images' => [],
+                'benefit' => '',
+            ];
+        }
+
+        return $items;
     }
 
     private function serialize_block(array $asins, array $existingAttrs = []): string {
@@ -244,35 +332,82 @@ final class MTB_Affiliate_Post_Processor {
     }
 
     private function collapse_adjacent_affiliate_blocks(string $content): string {
-        return preg_replace_callback(
-            '/(?:(?:<!-- wp:meintechblog\/affiliate-cards(?:\s+{.*?})?\s*\/-->\s*){2,})/su',
-            function (array $matches): string {
-                if (! preg_match_all(self::BLOCK_PATTERN, $matches[0], $blockMatches, PREG_SET_ORDER)) {
-                    return $matches[0];
-                }
+        if (! preg_match_all(self::BLOCK_PATTERN, $content, $blockMatches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+            return $content;
+        }
 
-                $kept = [];
-                $seen = [];
+        $result = '';
+        $cursor = 0;
+        $pendingGroup = [];
 
-                foreach ($blockMatches as $index => $blockMatch) {
-                    $blockMarkup = $blockMatch[0];
-                    $attrs = $this->decode_attrs($blockMatch[1] ?? '');
-                    $items = $this->sanitize_items($attrs['items'] ?? []);
-                    $asinKey = count($items) === 1 ? (string) ($items[0]['asin'] ?? '') : '';
-                    $dedupeKey = $asinKey !== '' ? 'asin:' . $asinKey : 'block:' . $index;
+        foreach ($blockMatches as $index => $blockMatch) {
+            $blockMarkup = (string) ($blockMatch[0][0] ?? '');
+            $blockOffset = (int) ($blockMatch[0][1] ?? -1);
+            if ($blockMarkup === '' || $blockOffset < 0) {
+                continue;
+            }
 
-                    if (isset($seen[$dedupeKey])) {
-                        continue;
-                    }
+            $between = substr($content, $cursor, $blockOffset - $cursor);
+            if ($between === false) {
+                $between = '';
+            }
 
-                    $seen[$dedupeKey] = true;
-                    $kept[] = $blockMarkup;
-                }
+            if ($pendingGroup === []) {
+                $result .= $between;
+                $pendingGroup[] = $this->build_collapsible_block_entry($blockMatch, $blockMarkup, $index);
+            } elseif (trim($between) === '') {
+                $pendingGroup[] = $this->build_collapsible_block_entry($blockMatch, $blockMarkup, $index);
+            } else {
+                $result .= $this->dedupe_collapsible_block_group($pendingGroup);
+                $result .= $between;
+                $pendingGroup = [$this->build_collapsible_block_entry($blockMatch, $blockMarkup, $index)];
+            }
 
-                return implode('', $kept);
-            },
-            $content
-        ) ?? $content;
+            $cursor = $blockOffset + strlen($blockMarkup);
+        }
+
+        if ($pendingGroup !== []) {
+            $result .= $this->dedupe_collapsible_block_group($pendingGroup);
+        }
+
+        $tail = substr($content, $cursor);
+        if ($tail !== false) {
+            $result .= $tail;
+        }
+
+        return $result;
+    }
+
+    private function build_collapsible_block_entry(array $blockMatch, string $blockMarkup, int $index): array {
+        $attrs = $this->decode_attrs($blockMatch[1][0] ?? $blockMatch[1] ?? '');
+        $items = $this->sanitize_items($attrs['items'] ?? []);
+        $asinKey = count($items) === 1 ? (string) ($items[0]['asin'] ?? '') : '';
+
+        return [
+            'markup' => $blockMarkup,
+            'key' => $asinKey !== '' ? 'asin:' . $asinKey : 'block:' . $index,
+        ];
+    }
+
+    private function dedupe_collapsible_block_group(array $group): string {
+        $kept = [];
+        $seen = [];
+
+        foreach ($group as $entry) {
+            $dedupeKey = (string) ($entry['key'] ?? '');
+            if ($dedupeKey === '') {
+                $dedupeKey = 'block:' . count($kept);
+            }
+
+            if (isset($seen[$dedupeKey])) {
+                continue;
+            }
+
+            $seen[$dedupeKey] = true;
+            $kept[] = (string) ($entry['markup'] ?? '');
+        }
+
+        return implode('', $kept);
     }
 
     private static function build_inline_placeholder(int $index, string $asin, string $paragraphMarkup): string {
@@ -284,7 +419,7 @@ final class MTB_Affiliate_Post_Processor {
         );
     }
 
-    private function resolve_inline_items(array $asins, array $existingAttrs): array {
+    private function resolve_inline_items(array $asins, array $existingAttrs, array $fallbackItems = []): array {
         $map = [];
 
         $existingItems = $this->sanitize_items($existingAttrs['items'] ?? []);
@@ -302,13 +437,120 @@ final class MTB_Affiliate_Post_Processor {
                 foreach ($this->sanitize_items($resolverResult) as $item) {
                     $asin = (string) $item['asin'];
                     if ($asin !== '') {
-                        $map[$asin] = $item;
+                        $map[$asin] = $this->merge_inline_item_with_fallback(
+                            $item,
+                            $fallbackItems[$asin] ?? null
+                        );
                     }
                 }
             }
         }
 
+        foreach ($fallbackItems as $asin => $fallbackItem) {
+            if (! array_key_exists($asin, $map)) {
+                $map[$asin] = $fallbackItem;
+                continue;
+            }
+
+            if ($map[$asin] === null) {
+                unset($map[$asin]);
+            }
+        }
+
         return $map;
+    }
+
+    private function merge_inline_item_with_fallback(array $resolvedItem, ?array $fallbackItem): ?array {
+        if (! is_array($fallbackItem) || $fallbackItem === []) {
+            return $resolvedItem;
+        }
+
+        $resolvedTitle = trim((string) ($resolvedItem['title'] ?? ''));
+        $fallbackTitle = trim((string) ($fallbackItem['title'] ?? ''));
+        if ($resolvedTitle === '' || $fallbackTitle === '') {
+            return $resolvedItem;
+        }
+
+        if ($this->titles_hard_mismatch($fallbackTitle, $resolvedTitle)) {
+            return null;
+        }
+
+        $merged = $resolvedItem;
+        $merged['title'] = $fallbackTitle;
+
+        return $merged;
+    }
+
+    private function titles_hard_mismatch(string $fallbackTitle, string $resolvedTitle): bool {
+        $fallbackTokens = $this->title_tokens($fallbackTitle);
+        $resolvedTokens = $this->title_tokens($resolvedTitle);
+
+        if ($fallbackTokens === [] || $resolvedTokens === []) {
+            return false;
+        }
+
+        foreach ($fallbackTokens as $fallbackToken) {
+            foreach ($resolvedTokens as $resolvedToken) {
+                if ($fallbackToken === $resolvedToken) {
+                    return false;
+                }
+
+                $shorterLength = min(strlen($fallbackToken), strlen($resolvedToken));
+                if (
+                    $shorterLength >= 6
+                    && (str_contains($fallbackToken, $resolvedToken) || str_contains($resolvedToken, $fallbackToken))
+                ) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function title_tokens(string $title): array {
+        $genericTokens = [
+            'affiliate',
+            'affiliatelink',
+            'amazon',
+            'artikel',
+            'card',
+            'info',
+            'link',
+            'links',
+            'mehr',
+            'preis',
+            'produkt',
+        ];
+        $normalized = html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $normalized = preg_replace('/\s*\(Affiliate-Link\)\s*$/iu', '', $normalized) ?? $normalized;
+        $normalized = mb_strtolower($normalized, 'UTF-8');
+        $normalized = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $normalized) ?? $normalized;
+        $parts = preg_split('/\s+/u', trim($normalized)) ?: [];
+
+        $tokens = [];
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            $length = mb_strlen($part, 'UTF-8');
+            if ($length < 4 && ! preg_match('/\d/u', $part)) {
+                continue;
+            }
+
+            if (preg_match('/^\d+$/u', $part)) {
+                continue;
+            }
+
+            if (in_array($part, $genericTokens, true)) {
+                continue;
+            }
+
+            $tokens[] = $part;
+        }
+
+        return array_values(array_unique($tokens));
     }
 
     private function replace_inline_markers(string $content, array $resolvedItems): string {

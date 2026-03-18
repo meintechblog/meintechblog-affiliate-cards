@@ -15,6 +15,7 @@ Das Repo enthält jetzt eine installierbare Plugin-Basis:
 - direkte Block-Umwandlung im Gutenberg-Editor ohne Speichern/Neuladen
 - WYSIWYG-Editoransicht nah an der echten Live-Karte
 - Inline-Fließtext-Workflow per `amazon:ASIN` mit automatischer Satz-Umschreibung und Card-Erzeugung beim Speichern
+- neuer Audit-Tab in den Plugin-Einstellungen mit Post-Matrix, Status, Logs und Aktionen `Prüfen` / `Geradeziehen`
 - PHP-Client für die Amazon Creators API
 - `uninstall.php` für sauberes Entfernen der Plugin-Optionen
 - Build-Skript für ein installierbares ZIP
@@ -90,6 +91,17 @@ Die kurze Version:
    - direkt unter dem Absatz wurde eine `Affiliate Card` eingefügt
    - bei mehreren Markern im selben Absatz wurden mehrere Cards erzeugt
 
+### Affiliate Audit
+
+Unter `Einstellungen -> Affiliate Card -> Affiliate Audit` gibt es jetzt eine Redaktionsansicht fuer bestehende Beitraege:
+
+1. Die Matrix listet die neuesten Blogposts mit Status, Affiliate-Funden, Tracking-Befund, Card-Anzahl und Kurzlog
+2. `Prüfen` scannt einen Beitrag ohne Inhaltsaenderung und schreibt einen lesbaren Audit-Status
+3. `Geradeziehen` fuehrt sichere Reparaturen aus, richtet bestehende Amazon-Produktlinks und Affiliate-Cards auf den Datums-Tag des Beitrags aus und aktualisiert den Audit-Log
+4. `Öffnen` springt direkt in den WordPress-Editor des Beitrags
+
+Damit koennen wir nach und nach alte Beitraege sauber pruefen und ueberarbeiten, ohne blind Bulk-Aenderungen zu machen.
+
 ### So testest du es am einfachsten
 
 1. Lege einen Testbeitrag oder Entwurf an
@@ -136,7 +148,7 @@ Dieses Repo nutzt die `Energy Community License (ECL-1.0)` in [LICENSE.md](/User
 - `templates/`
   dynamische Server-Render-Ausgabe
 - `assets/`
-  Frontend-CSS
+  Frontend- und Admin-CSS
 - `tests/`
   kleine lokale PHP-Checks für Kernlogik, Lifecycle und Autoscan-Verhalten
 - `scripts/`

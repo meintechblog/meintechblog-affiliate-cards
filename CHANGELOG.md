@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.2.25
+
+- bewertet bestehende Amazon-Links jetzt gegen den aktuellen Amazon-Titel und unterscheidet zwischen weichem Titel-Mismatch und hartem Fehltreffer
+- übernimmt bei weichen Mismatches den vorhandenen Beitrags-Linktext als Card-Titel, damit kurze redaktionelle Produktnamen erhalten bleiben
+- blockiert bei harten Fehltreffern die automatische Card-Erzeugung, statt offensichtliche Fehlprodukte wie Kreditkarten in alte Technik-Beiträge einzubauen
+
+## 0.2.24
+
+- baut für alte Amazon-Affiliate-Links jetzt eine Fallback-Card aus vorhandenem Linktext und URL, wenn die Creators API keine Produktdaten mehr liefert
+- verhindert damit, dass ältere Beiträge komplett ohne Card bleiben, nur weil Amazon den Artikel nicht mehr sauber auflöst
+
+## 0.2.23
+
+- dedupliziert automatisch erzeugte Affiliate-Cards jetzt beitragsweit pro ASIN, damit wiederholte Produktlinks in späteren Absätzen nicht jedes Mal dieselbe Karte erneut erzeugen
+- lässt die späteren Inline-Links dabei normal verlinkt stehen, sodass der Textfluss vollständig bleibt und nur die Kartenmenge ruhiger wird
+
+## 0.2.22
+
+- verarbeitet Inline-Affiliate-Links jetzt auch in klassischen HTML-Absätzen mit nackten `<p>...</p>` statt nur in `core/paragraph`-Blöcken
+- erkennt für die Intro-Deferral-Logik neben dem Gutenberg-`more`-Block jetzt auch rohe `<!--more-->`-Marker älterer Beiträge
+
+## 0.2.21
+
+- validiert beim Tracking-Normalisieren den aus dem Beitragsdatum abgeleiteten Amazon-Tag jetzt erst gegen echte Produktdaten
+- fällt bei ungültigem Datums-Tag konservativ auf den bereits funktionierenden bestehenden Tag zurück, statt Links und Cards kaputt auf einen nicht gemappten Partner-Tag umzuschreiben
+
+## 0.2.20
+
+- behebt einen Dedupe-Fehler im Post-Processor, der Absätze zwischen mehreren automatisch erzeugten Affiliate-Cards verschlucken konnte
+- erhält damit bei mehreren Amazon-Links in aufeinanderfolgenden Absätzen den Fließtext und die lokale Kartenreihenfolge stabil
+
+## 0.2.19
+
+- verschiebt automatisch erzeugte Affiliate-Cards für Amazon-Verweise aus der Einleitung jetzt hinter den ersten `more`-Tag, damit oberhalb des Teasers keine Produktboxen den Einstieg zerschießen
+- bewahrt dabei die echte Reihenfolge gemischter Amazon-Verweise im Absatz, auch wenn bestehende Amazon-Links und `amazon:ASIN`-Marker zusammen vorkommen
+
+## 0.2.18
+
+- `Geradeziehen` vereinheitlicht jetzt bestehende Amazon-Produktlinks und benachbarte Affiliate-Card-URLs konsequent auf den aus dem Beitragsdatum abgeleiteten Tracking-Tag
+- behebt damit Altfälle, in denen Inline-Link und Karte unterschiedliche, aber formal gültige Tracking-IDs trugen und der Audit-Tab fälschlich auf `Manuell prüfen` hängen blieb
+
+## 0.2.17
+
+- normalisiert gespeicherte Amazon-Block-URLs mit `\u0026`, damit der Audit-Parser korrekte Tracking-Tags aus Block-JSON liest
+- verhindert dadurch falsche `Tracking-ID abweichend`-Befunde bei bereits sauber gepflegten Affiliate Cards
+
+## 0.2.16
+
+- erweitert die bestehende Plugin-Settings-Seite um den neuen Tab `Affiliate Audit`
+- listet neueste Blogposts mit Status, Affiliate-Funden, Tracking-Befund, Card-Anzahl und lesbarem Kurzlog
+- fuegt echte Admin-Aktionen `Prüfen` und `Geradeziehen` ueber `admin-post.php` samt Ruecksprung und Status-Notice hinzu
+- poliert den Audit-Tab mit eigener Admin-CSS und Status-/Tracking-Badges
+
 ## 0.2.15
 
 - trennt Inline- und Standalone-ASINs im Post-Processor sauber, damit beim erneuten Speichern eines bereits angereicherten Absatzes kein zusätzlicher Sammelblock mehr entsteht

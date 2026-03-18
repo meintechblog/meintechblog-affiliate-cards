@@ -9,11 +9,13 @@ final class MTB_Affiliate_Plugin {
 
     private MTB_Affiliate_Settings $settings;
     private MTB_Affiliate_Block $block;
+    private MTB_Affiliate_Audit_Service $auditService;
     private MTB_Affiliate_Amazon_Client $amazonClient;
     private MTB_Affiliate_Rest_Controller $restController;
 
     private function __construct() {
         $this->settings = new MTB_Affiliate_Settings();
+        $this->auditService = new MTB_Affiliate_Audit_Service();
         $this->amazonClient = new MTB_Affiliate_Amazon_Client();
         $this->block = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
         $this->restController = new MTB_Affiliate_Rest_Controller($this->settings, $this->amazonClient);
@@ -38,6 +40,7 @@ final class MTB_Affiliate_Plugin {
         add_action('init', [$this->block, 'register']);
         add_action('rest_api_init', [$this->restController, 'register_routes']);
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+        add_action('admin_post_mtb_affiliate_audit', [$this, 'handle_audit_admin_post']);
     }
 
     public static function activate(): void {
@@ -74,6 +77,13 @@ final class MTB_Affiliate_Plugin {
             [],
             MTB_AFFILIATE_CARDS_VERSION
         );
+
+        wp_register_style(
+            'mtb-affiliate-cards-admin',
+            MTB_AFFILIATE_CARDS_URL . 'assets/admin.css',
+            [],
+            MTB_AFFILIATE_CARDS_VERSION
+        );
     }
 
     public function render_settings_page(): void {
@@ -82,52 +92,190 @@ final class MTB_Affiliate_Plugin {
         }
 
         $settings = $this->settings->get_all();
+        $tab = $this->current_admin_tab();
         ?>
         <div class="wrap">
             <h1>Affiliate Card</h1>
-            <p>Grundkonfiguration fuer die nativen Amazon-Affiliate-Cards auf meintechblog.de.</p>
-            <form method="post" action="options.php">
-                <?php if (function_exists('settings_fields')) : ?>
-                    <?php settings_fields($this->settings->settings_group()); ?>
-                <?php endif; ?>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><label for="mtb-cta-label">CTA-Text</label></th>
-                        <td><input id="mtb-cta-label" type="text" class="regular-text" name="<?php echo esc_attr($this->settings->option_name()); ?>[cta_label]" value="<?php echo esc_attr($settings['cta_label']); ?>"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="mtb-badge-mode">Badge-Modus</label></th>
-                        <td>
-                            <select id="mtb-badge-mode" name="<?php echo esc_attr($this->settings->option_name()); ?>[badge_mode]">
-                                <option value="auto" <?php selected($settings['badge_mode'], 'auto'); ?>>Automatisch</option>
-                                <option value="video" <?php selected($settings['badge_mode'], 'video'); ?>>Immer Im Video verwendet</option>
-                                <option value="setup" <?php selected($settings['badge_mode'], 'setup'); ?>>Immer Passend zu diesem Setup</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="mtb-marketplace">Marketplace</label></th>
-                        <td><input id="mtb-marketplace" type="text" class="regular-text" name="<?php echo esc_attr($this->settings->option_name()); ?>[marketplace]" value="<?php echo esc_attr($settings['marketplace']); ?>"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="mtb-client-id">Amazon Client ID</label></th>
-                        <td><input id="mtb-client-id" type="text" class="regular-text code" name="<?php echo esc_attr($this->settings->option_name()); ?>[client_id]" value="<?php echo esc_attr($settings['client_id']); ?>"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="mtb-client-secret">Amazon Client Secret</label></th>
-                        <td><input id="mtb-client-secret" type="password" class="regular-text code" name="<?php echo esc_attr($this->settings->option_name()); ?>[client_secret]" value="<?php echo esc_attr($settings['client_secret']); ?>" autocomplete="new-password"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Kurze Titel bevorzugen</th>
-                        <td><label><input type="checkbox" name="<?php echo esc_attr($this->settings->option_name()); ?>[auto_shorten_titles]" value="1" <?php checked($settings['auto_shorten_titles']); ?>> Automatische Kürzung im aktuellen Live-Stil aktivieren</label></td>
-                    </tr>
-                </table>
-                <?php if (function_exists('submit_button')) : ?>
-                    <?php submit_button('Einstellungen speichern'); ?>
-                <?php endif; ?>
-            </form>
+            <p>Grundkonfiguration und Audit-Werkzeuge fuer die nativen Amazon-Affiliate-Cards auf meintechblog.de.</p>
+            <nav class="nav-tab-wrapper">
+                <a class="nav-tab <?php echo $tab === 'settings' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=settings">Einstellungen</a>
+                <a class="nav-tab <?php echo $tab === 'audit' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=audit">Affiliate Audit</a>
+            </nav>
+            <?php if ($tab === 'audit') : ?>
+                <?php $this->render_audit_tab(); ?>
+            <?php else : ?>
+                <form method="post" action="options.php">
+                    <?php if (function_exists('settings_fields')) : ?>
+                        <?php settings_fields($this->settings->settings_group()); ?>
+                    <?php endif; ?>
+                    <table class="form-table" role="presentation">
+                        <tr>
+                            <th scope="row"><label for="mtb-cta-label">CTA-Text</label></th>
+                            <td><input id="mtb-cta-label" type="text" class="regular-text" name="<?php echo esc_attr($this->settings->option_name()); ?>[cta_label]" value="<?php echo esc_attr($settings['cta_label']); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="mtb-badge-mode">Badge-Modus</label></th>
+                            <td>
+                                <select id="mtb-badge-mode" name="<?php echo esc_attr($this->settings->option_name()); ?>[badge_mode]">
+                                    <option value="auto" <?php selected($settings['badge_mode'], 'auto'); ?>>Automatisch</option>
+                                    <option value="video" <?php selected($settings['badge_mode'], 'video'); ?>>Immer Im Video verwendet</option>
+                                    <option value="setup" <?php selected($settings['badge_mode'], 'setup'); ?>>Immer Passend zu diesem Setup</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="mtb-marketplace">Marketplace</label></th>
+                            <td><input id="mtb-marketplace" type="text" class="regular-text" name="<?php echo esc_attr($this->settings->option_name()); ?>[marketplace]" value="<?php echo esc_attr($settings['marketplace']); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="mtb-client-id">Amazon Client ID</label></th>
+                            <td><input id="mtb-client-id" type="text" class="regular-text code" name="<?php echo esc_attr($this->settings->option_name()); ?>[client_id]" value="<?php echo esc_attr($settings['client_id']); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="mtb-client-secret">Amazon Client Secret</label></th>
+                            <td><input id="mtb-client-secret" type="password" class="regular-text code" name="<?php echo esc_attr($this->settings->option_name()); ?>[client_secret]" value="<?php echo esc_attr($settings['client_secret']); ?>" autocomplete="new-password"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Kurze Titel bevorzugen</th>
+                            <td><label><input type="checkbox" name="<?php echo esc_attr($this->settings->option_name()); ?>[auto_shorten_titles]" value="1" <?php checked($settings['auto_shorten_titles']); ?>> Automatische Kürzung im aktuellen Live-Stil aktivieren</label></td>
+                        </tr>
+                    </table>
+                    <?php if (function_exists('submit_button')) : ?>
+                        <?php submit_button('Einstellungen speichern'); ?>
+                    <?php endif; ?>
+                </form>
+            <?php endif; ?>
         </div>
         <?php
+    }
+
+    private function render_audit_tab(): void {
+        if (function_exists('wp_enqueue_style')) {
+            wp_enqueue_style('mtb-affiliate-cards-admin');
+        }
+
+        $search = trim((string) ($_GET['mtb-audit-search'] ?? ''));
+        $statusFilter = trim((string) ($_GET['mtb-audit-status'] ?? ''));
+        $rows = $this->filter_audit_rows($this->auditService->list_recent_rows(50), $search, $statusFilter);
+        $summary = [
+            'Offen' => 0,
+            'Manuell prüfen' => 0,
+            'Geradegezogen' => 0,
+            'Fehler' => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $status = (string) ($row['status'] ?? '');
+            if ($status === 'manuell_pruefen') {
+                $summary['Manuell prüfen']++;
+            } elseif ($status === 'geradegezogen') {
+                $summary['Geradegezogen']++;
+            } elseif ($status === 'fehler') {
+                $summary['Fehler']++;
+            } else {
+                $summary['Offen']++;
+            }
+        }
+        ?>
+        <div class="mtb-affiliate-audit">
+            <?php $this->render_audit_notice(); ?>
+            <div class="mtb-affiliate-audit-summary">
+                <?php foreach ($summary as $label => $count) : ?>
+                    <div class="mtb-affiliate-audit-card">
+                        <strong><?php echo $label; ?></strong>
+                        <span><?php echo $count; ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <form method="get" class="mtb-affiliate-audit-filters">
+                <input type="hidden" name="page" value="mtb-affiliate-cards">
+                <input type="hidden" name="tab" value="audit">
+                <input type="search" name="mtb-audit-search" value="<?php echo esc_attr($search); ?>" placeholder="Titel oder ASIN suchen">
+                <select name="mtb-audit-status">
+                    <option value="">Alle Stati</option>
+                    <option value="offen" <?php echo selected($statusFilter, 'offen'); ?>>Offen</option>
+                    <option value="manuell_pruefen" <?php echo selected($statusFilter, 'manuell_pruefen'); ?>>Manuell prüfen</option>
+                    <option value="geradegezogen" <?php echo selected($statusFilter, 'geradegezogen'); ?>>Geradegezogen</option>
+                    <option value="fehler" <?php echo selected($statusFilter, 'fehler'); ?>>Fehler</option>
+                </select>
+                <button type="submit" class="button">Filtern</button>
+            </form>
+            <table class="widefat striped mtb-affiliate-audit-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Datum</th>
+                        <th scope="col">Beitrag</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Affiliate-Funde</th>
+                        <th scope="col">Tracking-ID</th>
+                        <th scope="col">Cards</th>
+                        <th scope="col">Letzte Prüfung</th>
+                        <th scope="col">Kurzlog</th>
+                        <th scope="col">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($rows === []) : ?>
+                        <tr>
+                            <td colspan="9">Noch keine Audit-Daten vorhanden.</td>
+                        </tr>
+                    <?php else : ?>
+                        <?php foreach ($rows as $row) : ?>
+                            <tr>
+                                <td><?php echo esc_attr(substr((string) $row['date'], 0, 10)); ?></td>
+                                <td>
+                                    <a href="<?php echo esc_attr((string) $row['edit_link']); ?>"><?php echo esc_attr((string) $row['title']); ?></a>
+                                    <?php if (($row['asins'] ?? []) !== []) : ?>
+                                        <div class="mtb-affiliate-audit-meta"><?php echo esc_attr(implode(', ', (array) $row['asins'])); ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td><span class="mtb-affiliate-status-badge is-<?php echo esc_attr((string) $row['status']); ?>"><?php echo esc_attr($this->human_audit_status((string) $row['status'])); ?></span></td>
+                                <td><?php echo esc_attr((string) $row['affiliate_finds']); ?></td>
+                                <td><span class="mtb-affiliate-tracking-pill is-<?php echo esc_attr((string) $row['tracking']); ?>"><?php echo esc_attr($this->human_tracking_status((string) $row['tracking'])); ?></span></td>
+                                <td><?php echo esc_attr((string) $row['card_blocks']); ?></td>
+                                <td><?php echo esc_attr((string) $row['checked_at']); ?></td>
+                                <td><?php echo esc_attr((string) $row['short_log']); ?></td>
+                                <td>
+                                    <div class="mtb-affiliate-audit-actions">
+                                        <?php $this->render_audit_action_form((int) $row['id'], 'check', 'Prüfen'); ?>
+                                        <?php $this->render_audit_action_form((int) $row['id'], 'straighten', 'Geradeziehen'); ?>
+                                        <a class="button button-link" href="<?php echo esc_attr((string) $row['edit_link']); ?>">Öffnen</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php
+    }
+
+    public function handle_audit_admin_post(): void {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        $postId = (int) ($_POST['post_id'] ?? 0);
+        $task = trim((string) ($_POST['mtb_audit_task'] ?? ''));
+        if ($postId <= 0 || ! in_array($task, ['check', 'straighten'], true)) {
+            $this->redirect_to_audit_tab([
+                'mtb-audit-result' => 'invalid',
+            ]);
+            return;
+        }
+
+        if (function_exists('check_admin_referer')) {
+            check_admin_referer('mtb_affiliate_audit_' . $postId . '_' . $task, 'mtb_affiliate_audit_nonce');
+        }
+
+        $state = $this->run_affiliate_audit($postId, $task === 'straighten');
+
+        $this->redirect_to_audit_tab([
+            'mtb-audit-post' => $postId,
+            'mtb-audit-result' => $task,
+            'mtb-audit-status' => (string) ($state['status'] ?? ''),
+        ]);
     }
 
     public function handle_save_post(int $postId, $post = null, bool $update = false): void {
@@ -183,6 +331,67 @@ final class MTB_Affiliate_Plugin {
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
     }
 
+    private function run_affiliate_audit(int $postId, bool $straighten): array {
+        if (! function_exists('get_post')) {
+            return $this->auditService->default_state();
+        }
+
+        $post = get_post($postId);
+        if (! is_object($post) || ! isset($post->post_content)) {
+            return $this->auditService->default_state();
+        }
+
+        $content = (string) $post->post_content;
+        $settings = $this->settings->get_all();
+
+        if ($straighten) {
+            $processor = new MTB_Affiliate_Post_Processor(
+                null,
+                [
+                    'badgeMode' => $settings['badge_mode'],
+                    'ctaLabel' => $settings['cta_label'],
+                    'autoShortenTitles' => $settings['auto_shorten_titles'],
+                ],
+                function (array $asins) use ($settings, $post): array {
+                    return $this->resolve_items_for_save($asins, $settings, $post);
+                }
+            );
+
+            $processed = $processor->process($content);
+            $processedContent = (string) ($processed['content'] ?? $content);
+            $normalizedContent = $this->normalize_existing_affiliate_tracking($processedContent, $post, $settings);
+            $safeToPersist = strpos($normalizedContent, 'amazon:') === false;
+
+            if ($normalizedContent !== $content && $safeToPersist && function_exists('wp_update_post')) {
+                wp_update_post([
+                    'ID' => $postId,
+                    'post_content' => $normalizedContent,
+                ]);
+                $content = $normalizedContent;
+            }
+        }
+
+        $state = $this->auditService->scan_post_content($content);
+        $hasUnresolvedMarkers = strpos($content, 'amazon:') !== false;
+        $trackingIssue = ($state['tracking'] ?? '') === 'abweichend';
+
+        if ($straighten) {
+            $state['status'] = ($hasUnresolvedMarkers || $trackingIssue) ? 'manuell_pruefen' : 'geradegezogen';
+            $state['timestamps']['straightened_at'] = gmdate('c');
+        } else {
+            $state['status'] = $trackingIssue ? 'manuell_pruefen' : 'geprueft';
+        }
+
+        $state['timestamps']['checked_at'] = gmdate('c');
+        $state['short_log'] = $this->auditService->build_short_log($state);
+
+        if (function_exists('update_post_meta')) {
+            update_post_meta($postId, $this->auditService->meta_key(), $state);
+        }
+
+        return $state;
+    }
+
     private function resolve_items_for_save(array $asins, array $settings, object $post): array {
         if ($asins === [] || $settings['client_id'] === '' || $settings['client_secret'] === '') {
             return [];
@@ -222,6 +431,102 @@ final class MTB_Affiliate_Plugin {
         }
     }
 
+    private function normalize_existing_affiliate_tracking(string $content, object $post, array $settings): string {
+        $derivedTag = trim($this->amazonClient->derive_partner_tag((string) ($post->post_date ?? '')));
+        if ($content === '' || $derivedTag === '' || $derivedTag === 'meintechblog-000000-21') {
+            return $content;
+        }
+
+        $existingTag = trim((string) ($this->extract_existing_partner_tag($content) ?? ''));
+        $tagToUse = $this->resolve_normalized_partner_tag($content, $derivedTag, $existingTag, $settings);
+        if ($tagToUse === '') {
+            return $content;
+        }
+
+        $pattern = '/https?:\/\/(?:www\.)?amazon\.[^\s"\']+?\/dp\/[A-Z0-9]{10}[^\s"\']*/i';
+        $normalized = preg_replace_callback($pattern, function (array $matches) use ($tagToUse): string {
+            $url = (string) ($matches[0] ?? '');
+            return $this->replace_partner_tag_in_url($url, $tagToUse);
+        }, $content);
+
+        return is_string($normalized) ? $normalized : $content;
+    }
+
+    private function resolve_normalized_partner_tag(string $content, string $derivedTag, string $existingTag, array $settings): string {
+        $candidateAsins = $this->extract_affiliate_asins_from_content($content);
+        if ($candidateAsins === [] || trim((string) ($settings['client_id'] ?? '')) === '' || trim((string) ($settings['client_secret'] ?? '')) === '') {
+            return $existingTag !== '' ? $existingTag : '';
+        }
+
+        if ($derivedTag !== '' && $this->fetch_items_for_partner_tag($candidateAsins, $settings, $derivedTag) !== []) {
+            return $derivedTag;
+        }
+
+        if ($existingTag !== '' && $this->fetch_items_for_partner_tag($candidateAsins, $settings, $existingTag) !== []) {
+            return $existingTag;
+        }
+
+        return '';
+    }
+
+    private function replace_partner_tag_in_url(string $url, string $partnerTag): string {
+        if ($url === '') {
+            return $url;
+        }
+
+        $delimiter = '&';
+        if (strpos($url, '\\u0026') !== false) {
+            $delimiter = '\\u0026';
+        } elseif (strpos($url, '&amp;') !== false) {
+            $delimiter = '&amp;';
+        }
+
+        $normalizedUrl = str_replace(['\\u0026', '&amp;'], '&', $url);
+        $parts = parse_url($normalizedUrl);
+        $query = isset($parts['query']) && is_string($parts['query']) ? $parts['query'] : '';
+        if ($query === '') {
+            return $url;
+        }
+
+        parse_str($query, $params);
+        if (! isset($params['tag'])) {
+            return $url;
+        }
+
+        $params['tag'] = $partnerTag;
+        $rebuiltQuery = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+        if ($delimiter !== '&') {
+            $rebuiltQuery = str_replace('&', $delimiter, $rebuiltQuery);
+        }
+
+        $rebuiltUrl = '';
+        if (isset($parts['scheme']) && is_string($parts['scheme'])) {
+            $rebuiltUrl .= $parts['scheme'] . '://';
+        }
+        if (isset($parts['user']) && is_string($parts['user']) && $parts['user'] !== '') {
+            $rebuiltUrl .= $parts['user'];
+            if (isset($parts['pass']) && is_string($parts['pass']) && $parts['pass'] !== '') {
+                $rebuiltUrl .= ':' . $parts['pass'];
+            }
+            $rebuiltUrl .= '@';
+        }
+        if (isset($parts['host']) && is_string($parts['host'])) {
+            $rebuiltUrl .= $parts['host'];
+        }
+        if (isset($parts['port']) && is_int($parts['port'])) {
+            $rebuiltUrl .= ':' . $parts['port'];
+        }
+        $rebuiltUrl .= (string) ($parts['path'] ?? '');
+        if ($rebuiltQuery !== '') {
+            $rebuiltUrl .= '?' . $rebuiltQuery;
+        }
+        if (isset($parts['fragment']) && is_string($parts['fragment']) && $parts['fragment'] !== '') {
+            $rebuiltUrl .= '#' . $parts['fragment'];
+        }
+
+        return $rebuiltUrl !== '' ? $rebuiltUrl : $url;
+    }
+
     private function extract_existing_partner_tag(string $content): ?string {
         if ($content === '') {
             return null;
@@ -241,6 +546,21 @@ final class MTB_Affiliate_Plugin {
         return null;
     }
 
+    private function extract_affiliate_asins_from_content(string $content): array {
+        if ($content === '') {
+            return [];
+        }
+
+        if (! preg_match_all('/\/dp\/([A-Z0-9]{10})/i', $content, $matches)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map(
+            static fn(string $asin): string => strtoupper($asin),
+            $matches[1] ?? []
+        )));
+    }
+
     private function fetch_items_for_partner_tag(array $asins, array $settings, string $partnerTag): array {
         try {
             return $this->amazonClient->get_items($asins, [
@@ -251,6 +571,117 @@ final class MTB_Affiliate_Plugin {
             ]);
         } catch (Throwable $exception) {
             return [];
+        }
+    }
+
+    private function current_admin_tab(): string {
+        $tab = trim((string) ($_GET['tab'] ?? 'settings'));
+        return in_array($tab, ['settings', 'audit'], true) ? $tab : 'settings';
+    }
+
+    private function filter_audit_rows(array $rows, string $search, string $statusFilter): array {
+        return array_values(array_filter($rows, static function (array $row) use ($search, $statusFilter): bool {
+            if ($statusFilter !== '' && (string) ($row['status'] ?? '') !== $statusFilter) {
+                return false;
+            }
+
+            if ($search === '') {
+                return true;
+            }
+
+            $haystacks = [
+                (string) ($row['title'] ?? ''),
+                (string) ($row['short_log'] ?? ''),
+                implode(' ', array_map('strval', (array) ($row['asins'] ?? []))),
+            ];
+
+            foreach ($haystacks as $haystack) {
+                if ($haystack !== '' && stripos($haystack, $search) !== false) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+    }
+
+    private function human_audit_status(string $status): string {
+        $map = [
+            'offen' => 'Offen',
+            'geprueft' => 'Geprüft',
+            'geradegezogen' => 'Geradegezogen',
+            'manuell_pruefen' => 'Manuell prüfen',
+            'fehler' => 'Fehler',
+        ];
+
+        return $map[$status] ?? ucfirst($status);
+    }
+
+    private function human_tracking_status(string $tracking): string {
+        $map = [
+            'ok' => 'OK',
+            'abweichend' => 'Abweichend',
+            'unklar' => 'Unklar',
+            '' => 'Unklar',
+        ];
+
+        return $map[$tracking] ?? $tracking;
+    }
+
+    private function render_audit_action_form(int $postId, string $task, string $label): void {
+        $actionUrl = function_exists('admin_url') ? admin_url('admin-post.php') : 'admin-post.php';
+        ?>
+        <form method="post" action="<?php echo esc_attr($actionUrl); ?>">
+            <input type="hidden" name="action" value="mtb_affiliate_audit">
+            <input type="hidden" name="post_id" value="<?php echo esc_attr((string) $postId); ?>">
+            <input type="hidden" name="mtb_audit_task" value="<?php echo esc_attr($task); ?>">
+            <?php if (function_exists('wp_nonce_field')) : ?>
+                <?php wp_nonce_field('mtb_affiliate_audit_' . $postId . '_' . $task, 'mtb_affiliate_audit_nonce'); ?>
+            <?php endif; ?>
+            <button type="submit" class="button <?php echo $task === 'straighten' ? 'button-primary' : ''; ?>"><?php echo esc_attr($label); ?></button>
+        </form>
+        <?php
+    }
+
+    private function render_audit_notice(): void {
+        $result = trim((string) ($_GET['mtb-audit-result'] ?? ''));
+        $status = trim((string) ($_GET['mtb-audit-status'] ?? ''));
+        $postId = (int) ($_GET['mtb-audit-post'] ?? 0);
+
+        if ($result === '') {
+            return;
+        }
+
+        $message = '';
+        if ($result === 'check') {
+            $message = sprintf('Beitrag %d wurde geprüft. Status: %s.', $postId, $this->human_audit_status($status));
+        } elseif ($result === 'straighten') {
+            $message = sprintf('Beitrag %d wurde geradegezogen. Status: %s.', $postId, $this->human_audit_status($status));
+        } else {
+            $message = 'Audit-Aktion konnte nicht verarbeitet werden.';
+        }
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p><?php echo esc_attr($message); ?></p>
+        </div>
+        <?php
+    }
+
+    private function redirect_to_audit_tab(array $args): void {
+        $baseUrl = function_exists('admin_url')
+            ? admin_url('options-general.php?page=mtb-affiliate-cards&tab=audit')
+            : 'options-general.php?page=mtb-affiliate-cards&tab=audit';
+
+        $url = $baseUrl;
+        if (function_exists('add_query_arg')) {
+            $url = add_query_arg($args, $baseUrl);
+        } elseif ($args !== []) {
+            $separator = str_contains($baseUrl, '?') ? '&' : '?';
+            $url = $baseUrl . $separator . http_build_query($args);
+        }
+
+        if (function_exists('wp_safe_redirect')) {
+            wp_safe_redirect($url);
         }
     }
 }

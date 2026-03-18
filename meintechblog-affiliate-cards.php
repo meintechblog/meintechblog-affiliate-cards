@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MeinTechBlog Affiliate Cards
  * Description: Native Gutenberg affiliate cards for Amazon products on meintechblog.de.
- * Version: 0.2.15
+ * Version: 0.2.25
  * Author: meintechblog.de
  */
 
@@ -12,7 +12,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('MTB_AFFILIATE_CARDS_VERSION', '0.2.15');
+define('MTB_AFFILIATE_CARDS_VERSION', '0.2.25');
 define('MTB_AFFILIATE_CARDS_FILE', __FILE__);
 define('MTB_AFFILIATE_CARDS_DIR', plugin_dir_path(__FILE__));
 define('MTB_AFFILIATE_CARDS_URL', plugin_dir_url(__FILE__));
@@ -23,6 +23,7 @@ require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-badge-resol
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-renderer.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-token-scanner.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-post-processor.php';
+require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-audit-service.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-amazon-client.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-block.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-plugin.php';

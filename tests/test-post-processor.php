@@ -184,6 +184,116 @@ if ($inlineParagraphPos === false || $inlineCardOnePos === false || $inlineCardT
     exit(1);
 }
 
+$introInlineCards = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Intro mit <a href="https://www.amazon.de/dp/B0INLINE18?tag=meintechblog-251007-21">Produkt</a> und amazon:B0INLINE19.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:more -->
+<!--more-->
+<!-- /wp:more -->
+
+<!-- wp:paragraph -->
+<p>Hauptteil startet hier.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+if (substr_count($introInlineCards['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
+    fwrite(STDERR, "Intro affiliate references before the more block should still create one card per product.\n");
+    exit(1);
+}
+
+$introParagraphPos = strpos($introInlineCards['content'], 'Intro mit <a href="https://www.amazon.de/dp/B0INLINE18');
+$morePos = strpos($introInlineCards['content'], '<!-- wp:more -->');
+$introCardOnePos = strpos($introInlineCards['content'], '"asin":"B0INLINE18"');
+$introCardTwoPos = strpos($introInlineCards['content'], '"asin":"B0INLINE19"');
+$bodyPos = strpos($introInlineCards['content'], 'Hauptteil startet hier.');
+
+if (
+    $introParagraphPos === false
+    || $morePos === false
+    || $introCardOnePos === false
+    || $introCardTwoPos === false
+    || $bodyPos === false
+    || ! ($introParagraphPos < $morePos && $morePos < $introCardOnePos && $introCardOnePos < $introCardTwoPos && $introCardTwoPos < $bodyPos)
+) {
+    fwrite(STDERR, "Intro affiliate cards should be deferred until after the first more block.\n");
+    exit(1);
+}
+
+$classicInlineCards = $inlineResolverProcessor->process(<<<HTML
+<p>Erster Klassiker mit <a href="https://www.amazon.de/dp/B0CLASSIC1?tag=meintechblog-250325-21">Produkt 1 (Affiliate-Link)</a>.</p>
+
+<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0CLASSIC1","title":"Alter Titel","detail_url":"https://old.example/B0CLASSIC1"}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
+
+<p>Zweiter Klassiker mit <a href="https://www.amazon.de/dp/B0CLASSIC2?tag=meintechblog-250325-21">Produkt 2 (Affiliate-Link)</a> und <a href="https://www.amazon.de/dp/B0CLASSIC3?tag=meintechblog-250325-21">Produkt 3 (Affiliate-Link)</a>.</p>
+
+<p>Abschluss ohne Affiliate.</p>
+HTML);
+
+if (substr_count($classicInlineCards['content'], '<!-- wp:meintechblog/affiliate-cards') !== 3) {
+    fwrite(STDERR, "Classic HTML paragraphs should create one affiliate card per detected Amazon product.\n");
+    exit(1);
+}
+
+$classicFirstParagraphPos = strpos($classicInlineCards['content'], 'Erster Klassiker mit');
+$classicFirstCardPos = strpos($classicInlineCards['content'], '"asin":"B0CLASSIC1"');
+$classicSecondParagraphPos = strpos($classicInlineCards['content'], 'Zweiter Klassiker mit');
+$classicSecondCardPos = strpos($classicInlineCards['content'], '"asin":"B0CLASSIC2"');
+$classicThirdCardPos = strpos($classicInlineCards['content'], '"asin":"B0CLASSIC3"');
+$classicTailPos = strpos($classicInlineCards['content'], 'Abschluss ohne Affiliate.');
+
+if (
+    $classicFirstParagraphPos === false
+    || $classicFirstCardPos === false
+    || $classicSecondParagraphPos === false
+    || $classicSecondCardPos === false
+    || $classicThirdCardPos === false
+    || $classicTailPos === false
+    || ! ($classicFirstParagraphPos < $classicFirstCardPos
+        && $classicFirstCardPos < $classicSecondParagraphPos
+        && $classicSecondParagraphPos < $classicSecondCardPos
+        && $classicSecondCardPos < $classicThirdCardPos
+        && $classicThirdCardPos < $classicTailPos)
+) {
+    fwrite(STDERR, "Classic HTML affiliate cards should stay attached to their matching paragraphs.\n");
+    exit(1);
+}
+
+$classicIntroInlineCards = $inlineResolverProcessor->process(<<<HTML
+<p>Intro klassisch mit <a href="https://www.amazon.de/dp/B0CLASSIC4?tag=meintechblog-250325-21">Produkt 4 (Affiliate-Link)</a> und amazon:B0CLASSIC5.</p>
+
+<!--more-->
+
+<p>Body beginnt hier.</p>
+HTML);
+
+if (substr_count($classicIntroInlineCards['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
+    fwrite(STDERR, "Classic intro affiliate references before a raw more tag should still create one card per product.\n");
+    exit(1);
+}
+
+$classicIntroParagraphPos = strpos($classicIntroInlineCards['content'], 'Intro klassisch mit');
+$classicMorePos = strpos($classicIntroInlineCards['content'], '<!--more-->');
+$classicIntroCardOnePos = strpos($classicIntroInlineCards['content'], '"asin":"B0CLASSIC4"');
+$classicIntroCardTwoPos = strpos($classicIntroInlineCards['content'], '"asin":"B0CLASSIC5"');
+$classicBodyPos = strpos($classicIntroInlineCards['content'], 'Body beginnt hier.');
+
+if (
+    $classicIntroParagraphPos === false
+    || $classicMorePos === false
+    || $classicIntroCardOnePos === false
+    || $classicIntroCardTwoPos === false
+    || $classicBodyPos === false
+    || ! ($classicIntroParagraphPos < $classicMorePos
+        && $classicMorePos < $classicIntroCardOnePos
+        && $classicIntroCardOnePos < $classicIntroCardTwoPos
+        && $classicIntroCardTwoPos < $classicBodyPos)
+) {
+    fwrite(STDERR, "Classic intro affiliate cards should be deferred until after a raw more tag.\n");
+    exit(1);
+}
+
 $placeholderLiteral = $inlineResolverProcessor->process(<<<HTML
 <!-- wp:paragraph -->
 <p>Literal __MTB_AFFILIATE_INLINE_BLOCK_1__ muss stehen bleiben, plus amazon:B0INLINE13.</p>
@@ -213,6 +323,36 @@ if (substr_count($inlineExistingAdjacent['content'], '"asin":"B0INLINE14"') !== 
 assert_contains_processor('Amazon Titel B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should keep the newer resolved content.');
 assert_not_contains_processor('https://old.example/B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should replace stale detail URLs.');
 
+$repeatedAsinAcrossParagraphs = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Erster Absatz mit amazon:B0INLINE20 im Text.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Zweiter Absatz mit amazon:B0INLINE20 erneut im Text.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Dritter Absatz mit amazon:B0INLINE21.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+if (substr_count($repeatedAsinAcrossParagraphs['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
+    fwrite(STDERR, "Repeated ASINs across different paragraphs should only create one card per unique ASIN.\n");
+    exit(1);
+}
+
+if (substr_count($repeatedAsinAcrossParagraphs['content'], '"asin":"B0INLINE20"') !== 1) {
+    fwrite(STDERR, "Repeated ASINs across different paragraphs should not create duplicate cards for the same product.\n");
+    exit(1);
+}
+
+assert_contains_processor(
+    'Zweiter Absatz mit <a href="https://www.amazon.de/dp/B0INLINE20"',
+    $repeatedAsinAcrossParagraphs['content'],
+    'Later paragraphs should keep the linked inline text even when the card was already shown earlier.'
+);
+
 $inlineResave = $inlineResolverProcessor->process(<<<HTML
 <!-- wp:paragraph -->
 <p>Ich nutze <a href="https://www.amazon.de/dp/B0INLINE16?tag=meintechblog-260317-21">Amazon Titel B0INLINE16 (Affiliate-Link)</a> und <a href="https://www.amazon.de/dp/B0INLINE17?tag=meintechblog-260317-21">Amazon Titel B0INLINE17 (Affiliate-Link)</a> im Setup.</p>
@@ -230,6 +370,45 @@ if (substr_count($inlineResave['content'], '<!-- wp:meintechblog/affiliate-cards
 
 if (substr_count($inlineResave['content'], '"asin":"B0INLINE16"') !== 1 || substr_count($inlineResave['content'], '"asin":"B0INLINE17"') !== 1) {
     fwrite(STDERR, "Re-saving an already enriched inline paragraph should keep one card per ASIN.\n");
+    exit(1);
+}
+
+$separatedInlineParagraphs = $inlineResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Erster Absatz mit <a href="https://www.amazon.de/dp/B016BLLINE?tag=meintechblog-250923-21">Link 1 (Affiliate-Link)</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Zweiter Absatz mit <a href="https://www.amazon.de/dp/B076YDPYLD?tag=meintechblog-250923-21">Link 2 (Affiliate-Link)</a> und <a href="https://www.amazon.de/dp/B00PZZ9OFC?tag=meintechblog-250923-21">Link 3 (Affiliate-Link)</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2>Weiter</h2>
+<!-- /wp:heading -->
+HTML);
+
+if (substr_count($separatedInlineParagraphs['content'], '<!-- wp:meintechblog/affiliate-cards') !== 3) {
+    fwrite(STDERR, "Separate inline affiliate paragraphs should keep all generated affiliate card blocks.\n");
+    exit(1);
+}
+
+$firstParagraphPos = strpos($separatedInlineParagraphs['content'], 'Erster Absatz mit');
+$secondParagraphPos = strpos($separatedInlineParagraphs['content'], 'Zweiter Absatz mit');
+$firstCardPos = strpos($separatedInlineParagraphs['content'], '"asin":"B016BLLINE"');
+$secondCardPos = strpos($separatedInlineParagraphs['content'], '"asin":"B076YDPYLD"');
+$thirdCardPos = strpos($separatedInlineParagraphs['content'], '"asin":"B00PZZ9OFC"');
+$headingPos = strpos($separatedInlineParagraphs['content'], '<h2>Weiter</h2>');
+
+if (
+    $firstParagraphPos === false
+    || $secondParagraphPos === false
+    || $firstCardPos === false
+    || $secondCardPos === false
+    || $thirdCardPos === false
+    || $headingPos === false
+    || ! ($firstParagraphPos < $firstCardPos && $firstCardPos < $secondParagraphPos && $secondParagraphPos < $secondCardPos && $secondCardPos < $thirdCardPos && $thirdCardPos < $headingPos)
+) {
+    fwrite(STDERR, "Paragraphs between separate affiliate-card groups must remain in place.\n");
     exit(1);
 }
 
@@ -268,6 +447,55 @@ if (substr_count($inlineInvalidUnresolved['content'], '<!-- wp:meintechblog/affi
 assert_contains_processor('Amazon Titel B0INLINE15 (Affiliate-Link)', $inlineInvalidUnresolved['content'], 'Resolved inline markers should still be replaced with linked affiliate text.');
 assert_contains_processor('amazon:INVALID123', $inlineInvalidUnresolved['content'], 'Unresolved inline markers should remain visible in the paragraph.');
 assert_not_contains_processor('"asin":"INVALID123"', $inlineInvalidUnresolved['content'], 'Unresolved inline markers must not create empty affiliate card blocks.');
+
+$inlineExistingLinkResolverProcessor = new MTB_Affiliate_Post_Processor(
+    new MTB_Affiliate_Token_Scanner(),
+    [],
+    static function (array $asins): array {
+        $items = [];
+        foreach ($asins as $asin) {
+            if ($asin === 'B0MISMCH1A') {
+                $items[] = [
+                    'asin' => $asin,
+                    'title' => '9 PCS HSS T-Griff Schraubenschlüssel + Gewindebohrer',
+                    'image_url' => 'https://images.example/gewinde.jpg',
+                    'images' => ['https://images.example/gewinde.jpg'],
+                    'detail_url' => 'https://www.amazon.de/dp/' . $asin . '?tag=meintechblog-241022-21',
+                ];
+                continue;
+            }
+
+            if ($asin === 'B0MISMCH2A') {
+                $items[] = [
+                    'asin' => $asin,
+                    'title' => 'Amazon Business American Express Card',
+                    'image_url' => 'https://images.example/card.jpg',
+                    'images' => ['https://images.example/card.jpg'],
+                    'detail_url' => 'https://www.amazon.de/dp/' . $asin . '?tag=meintechblog-241022-21',
+                ];
+            }
+        }
+
+        return $items;
+    }
+);
+
+$inlineExistingLinkMismatch = $inlineExistingLinkResolverProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p><a href="https://www.amazon.de/dp/B0MISMCH1A?tag=meintechblog-241022-21">Gewindebohrerset (Affiliate-Link)</a></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p><a href="https://www.amazon.de/dp/B0MISMCH2A?tag=meintechblog-241022-21">Schrumpfschlauch 4:1 mit Kleber schwarz Ø32mm (Affiliate-Link)</a></p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor('"asin":"B0MISMCH1A"', $inlineExistingLinkMismatch['content'], 'Soft title mismatches should still create a card for the linked product.');
+assert_contains_processor('"title":"Gewindebohrerset"', $inlineExistingLinkMismatch['content'], 'Soft mismatches should prefer the shorter existing link text as card title.');
+assert_contains_processor('https://images.example/gewinde.jpg', $inlineExistingLinkMismatch['content'], 'Soft mismatches may still keep the resolved product image.');
+assert_not_contains_processor('"asin":"B0MISMCH2A"', $inlineExistingLinkMismatch['content'], 'Hard mismatches must not auto-create a misleading affiliate card.');
+assert_not_contains_processor('Amazon Business American Express Card', $inlineExistingLinkMismatch['content'], 'Hard mismatches must not leak the wrong Amazon title into the content.');
+assert_contains_processor('Schrumpfschlauch 4:1 mit Kleber schwarz Ø32mm (Affiliate-Link)', $inlineExistingLinkMismatch['content'], 'Hard mismatches should leave the existing inline affiliate link text untouched.');
 
 $firstAffiliatePos = strpos($result['content'], '<!-- wp:meintechblog/affiliate-cards');
 $afterIntroPos = strpos($result['content'], '<p>Vor dem Block.</p>');
@@ -354,5 +582,21 @@ assert_contains_processor('"title":"USB-C Tester Messgerät"', $enriched['conten
 assert_contains_processor('"image_url":"https://images.example/tester.jpg"', $enriched['content'], 'Processor should serialize resolved item images.');
 assert_contains_processor('"benefit":"USB-C Stromwerte direkt prüfen"', $enriched['content'], 'Processor should serialize resolved benefit lines.');
 assert_contains_processor('"badgeMode":"video"', $enriched['content'], 'Processor should keep configured badge mode.');
+
+$inlineFallbackCardProcessor = new MTB_Affiliate_Post_Processor(
+    new MTB_Affiliate_Token_Scanner(),
+    [],
+    static fn(array $asins): array => []
+);
+
+$inlineFallbackCard = $inlineFallbackCardProcessor->process(<<<HTML
+<!-- wp:paragraph -->
+<p>Ich nutze die <a href="https://www.amazon.de/dp/B0INLINE30?tag=meintechblog-241212-21" target="_blank" rel="noreferrer noopener">Alte Lötstation 60W (Affiliate-Link)</a> seit Jahren.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_contains_processor('"asin":"B0INLINE30"', $inlineFallbackCard['content'], 'Existing Amazon links should still create a fallback card when the resolver returns no item.');
+assert_contains_processor('"title":"Alte Lötstation 60W"', $inlineFallbackCard['content'], 'Fallback cards should reuse the existing link text without the Affiliate-Link suffix.');
+assert_contains_processor('"detail_url":"https://www.amazon.de/dp/B0INLINE30?tag=meintechblog-241212-21"', $inlineFallbackCard['content'], 'Fallback cards should keep the existing affiliate URL.');
 
 echo "ok\n";

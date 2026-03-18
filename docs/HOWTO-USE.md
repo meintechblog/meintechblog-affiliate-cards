@@ -75,3 +75,15 @@ Du kannst den Block auch manuell einsetzen:
 - passt das Badge zum Beitrag?
   - mit YouTube-Embed: `Im Video verwendet`
   - ohne YouTube-Embed: `Passend zu diesem Setup`
+
+## Affiliate Audit im Backend
+
+Wenn du bestehende Blogposts sauber nachziehen willst:
+
+1. Gehe zu `Einstellungen -> Affiliate Card -> Affiliate Audit`
+2. Nutze Suche und Statusfilter, um interessante Beiträge zu finden
+3. Klicke bei einem Beitrag auf `Prüfen`, wenn du erstmal nur den Befund sehen willst
+4. Klicke auf `Geradeziehen`, wenn das Plugin sichere Korrekturen direkt anwenden soll
+5. Bei bestehenden Amazon-Produktlinks richtet `Geradeziehen` Inline-Link und benachbarte `Affiliate Card` auf den aus dem Beitragsdatum abgeleiteten Tracking-Tag aus
+6. Wenn ein Amazon-Verweis in der Einleitung vor dem ersten `more`-Tag sitzt, setzt das Plugin die erzeugte `Affiliate Card` erst direkt nach dem `more`-Block ein
+7. Lies den `Kurzlog`, um schnell zu verstehen, was gefunden oder geändert wurde

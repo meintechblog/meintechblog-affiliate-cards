@@ -1,0 +1,115 @@
+.mtb-affiliate-audit {
+    margin-top: 20px;
+}
+
+.mtb-affiliate-audit-summary {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin-bottom: 18px;
+}
+
+.mtb-affiliate-audit-card {
+    background: linear-gradient(180deg, #ffffff 0%, #faf7ef 100%);
+    border: 1px solid #e6dcc2;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(17, 17, 17, 0.05);
+    padding: 16px 18px;
+}
+
+.mtb-affiliate-audit-card strong {
+    color: #111111;
+    display: block;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.mtb-affiliate-audit-card span {
+    color: #111111;
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.mtb-affiliate-audit-filters {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.mtb-affiliate-audit-filters input[type="search"] {
+    min-width: 260px;
+}
+
+.mtb-affiliate-audit-table td,
+.mtb-affiliate-audit-table th {
+    vertical-align: top;
+}
+
+.mtb-affiliate-audit-meta {
+    color: #666666;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.mtb-affiliate-status-badge,
+.mtb-affiliate-tracking-pill {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+.mtb-affiliate-status-badge.is-offen {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.mtb-affiliate-status-badge.is-geprueft {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.mtb-affiliate-status-badge.is-geradegezogen {
+    background: #ecfccb;
+    color: #3f6212;
+}
+
+.mtb-affiliate-status-badge.is-manuell_pruefen,
+.mtb-affiliate-tracking-pill.is-abweichend {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.mtb-affiliate-status-badge.is-fehler {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.mtb-affiliate-tracking-pill.is-ok {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.mtb-affiliate-tracking-pill.is-unklar {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.mtb-affiliate-audit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mtb-affiliate-audit-actions form {
+    margin: 0;
+}

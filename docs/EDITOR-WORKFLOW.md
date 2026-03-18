@@ -51,3 +51,10 @@ Die `Affiliate Card` soll sich dabei im Editor fast wie die veröffentlichte Kar
 - Der Block muss ganz normal löschbar sein
 - Ein neuer Block entsteht nur durch einen neuen `amazon:ASIN`-Token
 - Wenn die ASIN bereits im Beitrag existiert, wird kein Duplikat erzeugt
+
+## Audit-Workflow fuer Altbeitraege
+
+- Im Plugin-Tab `Affiliate Audit` sehen wir die neuesten Posts in einer Matrix
+- `Prüfen` scannt einen Beitrag nur analysierend
+- `Geradeziehen` fuehrt sichere Reparaturen aus und aktualisiert Status plus Kurzlog
+- Die Matrix ist bewusst als Redaktionscockpit gedacht, damit alte Beitraege schrittweise und nachvollziehbar verbessert werden koennen

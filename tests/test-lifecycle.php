@@ -5,9 +5,34 @@ declare(strict_types=1);
 $GLOBALS['mtb_actions'] = [];
 $GLOBALS['mtb_deleted_options'] = [];
 $GLOBALS['mtb_rest_routes'] = [];
+$_GET['tab'] = 'settings';
 
 function add_action(string $hook, $callback): void {
     $GLOBALS['mtb_actions'][$hook][] = $callback;
+}
+
+function current_user_can(string $capability): bool {
+    return $capability === 'manage_options';
+}
+
+function esc_attr(string $value): string {
+    return $value;
+}
+
+function selected($actual, $expected): string {
+    return $actual === $expected ? 'selected' : '';
+}
+
+function checked($actual): string {
+    return $actual ? 'checked' : '';
+}
+
+function settings_fields(string $group): void {
+    echo '<input type="hidden" name="settings-group" value="' . $group . '">';
+}
+
+function submit_button(string $text): void {
+    echo '<button>' . $text . '</button>';
 }
 
 function register_rest_route(string $namespace, string $route, array $args): bool {
@@ -30,6 +55,7 @@ require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-badge-resolver.ph
 require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-renderer.php';
 require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-token-scanner.php';
 require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-post-processor.php';
+require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-audit-service.php';
 require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-amazon-client.php';
 require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-block.php';
 require_once dirname(__DIR__) . '/includes/class-mtb-affiliate-plugin.php';
@@ -53,8 +79,34 @@ MTB_Affiliate_Plugin::instance()->boot();
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_menu']), 'Plugin should register the settings page hook.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['init']), 'Plugin should register init hooks.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_init']), 'Plugin should register admin_init for settings.');
+assert_true_lifecycle(isset($GLOBALS['mtb_actions']['admin_post_mtb_affiliate_audit']), 'Plugin should register the audit admin-post handler.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['rest_api_init']), 'Plugin should register REST API hydration wiring.');
 assert_true_lifecycle(isset($GLOBALS['mtb_actions']['save_post']), 'Plugin should register save_post for inline affiliate enrichment on save.');
+
+$instanceReflection = new ReflectionClass('MTB_Affiliate_Plugin');
+$instance = MTB_Affiliate_Plugin::instance();
+$auditServiceProperty = $instanceReflection->getProperty('auditService');
+assert_true_lifecycle(
+    $auditServiceProperty->getValue($instance) instanceof MTB_Affiliate_Audit_Service,
+    'Plugin should initialize the audit service for the admin audit tab.'
+);
+
+ob_start();
+$instance->render_settings_page();
+$settingsPageHtml = (string) ob_get_clean();
+
+assert_true_lifecycle(
+    str_contains($settingsPageHtml, 'Affiliate Audit'),
+    'Settings page should render an Affiliate Audit tab.'
+);
+assert_true_lifecycle(
+    str_contains($settingsPageHtml, 'tab=settings'),
+    'Settings page should render a settings tab link.'
+);
+assert_true_lifecycle(
+    str_contains($settingsPageHtml, 'tab=audit'),
+    'Settings page should render an audit tab link.'
+);
 
 foreach ($GLOBALS['mtb_actions']['rest_api_init'] as $restCallback) {
     if (is_callable($restCallback)) {
@@ -83,6 +135,11 @@ assert_true_lifecycle(
 assert_true_lifecycle(
     is_file(dirname(__DIR__) . '/scripts/build-zip.sh'),
     'Plugin repo should include a build script for an installable ZIP.'
+);
+
+assert_true_lifecycle(
+    is_file(dirname(__DIR__) . '/assets/admin.css'),
+    'Plugin repo should include admin styling for the Affiliate Audit tab.'
 );
 
 assert_true_lifecycle(
