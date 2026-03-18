@@ -55,6 +55,8 @@ assert_same_processor(
 );
 
 assert_contains_processor('<!-- wp:meintechblog/affiliate-cards', $result['content'], 'Processor should insert the affiliate cards block.');
+assert_contains_processor('<!-- /wp:meintechblog/affiliate-cards -->', $result['content'], 'Processor should serialize affiliate blocks with explicit closing comments.');
+assert_not_contains_processor('/-->', $result['content'], 'Processor should not serialize affiliate blocks as self-closing comments.');
 assert_contains_processor('"asin":"B0D7955R6N"', $result['content'], 'Processor should serialize the first ASIN into block attrs.');
 assert_contains_processor('"asin":"B0CLTV6YB2"', $result['content'], 'Processor should serialize the second ASIN into block attrs.');
 assert_not_contains_processor('<p>B0D7955R6N</p>', $result['content'], 'Processor should remove the raw ASIN marker.');
@@ -171,6 +173,16 @@ HTML);
 
 if (substr_count($inlineCards['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
     fwrite(STDERR, "Inline paragraphs should create one affiliate card block per unique ASIN.\n");
+    exit(1);
+}
+
+if (substr_count($inlineCards['content'], '<!-- /wp:meintechblog/affiliate-cards -->') !== 2) {
+    fwrite(STDERR, "Inline affiliate cards should use explicit closing block comments.\n");
+    exit(1);
+}
+
+if (strpos($inlineCards['content'], '/-->') !== false) {
+    fwrite(STDERR, "Inline affiliate cards should not use self-closing block comments.\n");
     exit(1);
 }
 

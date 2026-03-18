@@ -5,6 +5,8 @@ declare(strict_types=1);
 $GLOBALS['mtb_actions'] = [];
 $GLOBALS['mtb_deleted_options'] = [];
 $GLOBALS['mtb_rest_routes'] = [];
+$GLOBALS['mtb_options'] = [];
+$GLOBALS['mtb_update_posts'] = [];
 $_GET['tab'] = 'settings';
 
 function add_action(string $hook, $callback): void {
@@ -42,6 +44,30 @@ function register_rest_route(string $namespace, string $route, array $args): boo
         'args' => $args,
     ];
     return true;
+}
+
+function get_option(string $option, $default = false) {
+    return $GLOBALS['mtb_options'][$option] ?? $default;
+}
+
+function remove_action(string $hook, $callback, int $priority = 10): void {
+}
+
+function wp_update_post(array $postarr): int {
+    $GLOBALS['mtb_update_posts'][] = $postarr;
+    return (int) ($postarr['ID'] ?? 0);
+}
+
+function wp_is_post_revision(int $postId): bool {
+    return false;
+}
+
+function wp_is_post_autosave(int $postId): bool {
+    return false;
+}
+
+function get_post(int $postId): ?object {
+    return null;
 }
 
 function delete_option(string $option): bool {
@@ -247,6 +273,38 @@ $partiallyResolved = $resolveMethod->invoke(
         'post_date' => '2026-03-17T10:38:49',
         'post_content' => '<p>Inline marker mix.</p>',
     ]
+);
+
+$GLOBALS['mtb_options']['mtb_affiliate_cards_settings'] = [
+    'client_id' => 'client-id',
+    'client_secret' => 'client-secret',
+    'marketplace' => 'www.amazon.de',
+    'cta_label' => 'Preis auf Amazon checken',
+    'badge_mode' => 'auto',
+    'auto_shorten_titles' => true,
+];
+$GLOBALS['mtb_update_posts'] = [];
+
+$instance->handle_save_post(
+    20042,
+    (object) [
+        'ID' => 20042,
+        'post_date' => '2024-06-04 16:42:54',
+        'post_content' => <<<HTML
+<!-- wp:paragraph -->
+<p><a href="https://www.amazon.de/dp/B0CP3ZLG7Y?tag=meintechblog-240604-21">ESP32 D1 Mini (Affiliate-Link)</a></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0CP3ZLG7Y","title":"ESP32 D1 Mini","detail_url":"https://www.amazon.de/dp/B0CP3ZLG7Y?tag=meintechblog-240604-21","image_url":"","images":[],"benefit":""}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
+HTML,
+    ],
+    true
+);
+
+assert_same_lifecycle(
+    [],
+    $GLOBALS['mtb_update_posts'],
+    'save_post should leave existing plain Amazon links and affiliate blocks untouched when no explicit amazon: marker is present.'
 );
 
 assert_same_lifecycle(

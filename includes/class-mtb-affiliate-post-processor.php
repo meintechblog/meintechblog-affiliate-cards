@@ -9,7 +9,7 @@ final class MTB_Affiliate_Post_Processor {
     private const INLINE_MARKER_PATTERN = '/\bamazon:([A-Z0-9]{10})\b/i';
     private const INLINE_LINK_PATTERN = '/href=(["\'])https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})(?:[?\/"\']|$)/i';
     private const INLINE_LINK_CAPTURE_PATTERN = '/<a\b[^>]*href=(["\'])(https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})[^"\']*)\1[^>]*>(.*?)<\/a>/isu';
-    private const BLOCK_PATTERN = '/<!-- wp:meintechblog\/affiliate-cards(?:\s+({.*?}))?\s*\/-->\s*/su';
+    private const BLOCK_PATTERN = '/<!-- wp:meintechblog\/affiliate-cards(?:\s+({.*?}))?\s*(?:\/-->|-->\s*<!-- \/wp:meintechblog\/affiliate-cards -->)\s*/su';
     private const PLACEHOLDER = '__MTB_AFFILIATE_BLOCK__';
 
     private MTB_Affiliate_Token_Scanner $scanner;
@@ -317,7 +317,7 @@ final class MTB_Affiliate_Post_Processor {
                 : (bool) $this->defaults['autoShortenTitles'],
         ];
 
-        return '<!-- wp:meintechblog/affiliate-cards ' . json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ' /-->';
+        return $this->wrap_block_comment($attrs);
     }
 
     private function serialize_single_block(array $item): string {
@@ -328,7 +328,7 @@ final class MTB_Affiliate_Post_Processor {
             'autoShortenTitles' => (bool) $this->defaults['autoShortenTitles'],
         ];
 
-        return '<!-- wp:meintechblog/affiliate-cards ' . json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ' /-->';
+        return $this->wrap_block_comment($attrs);
     }
 
     private function collapse_adjacent_affiliate_blocks(string $content): string {
@@ -408,6 +408,13 @@ final class MTB_Affiliate_Post_Processor {
         }
 
         return implode('', $kept);
+    }
+
+    private function wrap_block_comment(array $attrs): string {
+        return '<!-- wp:meintechblog/affiliate-cards '
+            . json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            . ' -->'
+            . '<!-- /wp:meintechblog/affiliate-cards -->';
     }
 
     private static function build_inline_placeholder(int $index, string $asin, string $paragraphMarkup): string {

@@ -307,6 +307,11 @@ final class MTB_Affiliate_Plugin {
             return;
         }
 
+        $postContent = (string) $post->post_content;
+        if (stripos($postContent, 'amazon:') === false) {
+            return;
+        }
+
         $settings = $this->settings->get_all();
         $processor = new MTB_Affiliate_Post_Processor(
             null,
@@ -320,8 +325,8 @@ final class MTB_Affiliate_Plugin {
             }
         );
 
-        $processed = $processor->process((string) $post->post_content);
-        if ($processed['asins'] === [] || $processed['content'] === (string) $post->post_content) {
+        $processed = $processor->process($postContent);
+        if ($processed['asins'] === [] || $processed['content'] === $postContent) {
             return;
         }
 

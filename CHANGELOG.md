@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.29
+
+- begrenzt den `save_post`-Pfad jetzt auf explizite `amazon:`-Marker statt normale bestehende Amazon-Links bei jedem Speichern erneut anzufassen
+- verhindert damit, dass Beiträge mit bereits gesetzten Inline-Affiliate-Links und Cards bei normalen Speichervorgängen unnötig umgeschrieben oder in Sonderfällen beschädigt werden
+
+## 0.2.28
+
+- serialisiert automatisch erzeugte Affiliate-Card-Blöcke jetzt mit explizitem öffnenden und schließenden Gutenberg-Blockkommentar statt als selbstschließenden Kommentar
+- erkennt beim Einlesen weiterhin beide Formen, damit bestehende Beiträge und neue Geradeziehen-Läufe stabil bleiben
+
 ## 0.2.27
 
 - führt im Audit den Status `Legacy-Fall` für alte Affiliate-Beiträge ein, die heute nicht mehr sicher automatisch in Cards umgewandelt werden können
