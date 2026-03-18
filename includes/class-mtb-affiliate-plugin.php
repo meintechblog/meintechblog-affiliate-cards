@@ -621,6 +621,7 @@ final class MTB_Affiliate_Plugin {
         $map = [
             'ok' => 'OK',
             'abweichend' => 'Abweichend',
+            'keine_funde' => 'Nicht nötig',
             'unklar' => 'Unklar',
             '' => 'Unklar',
         ];

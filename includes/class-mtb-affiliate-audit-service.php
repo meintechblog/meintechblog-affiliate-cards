@@ -29,6 +29,10 @@ final class MTB_Affiliate_Audit_Service {
         $cards = (int) ($state['counts']['card_blocks'] ?? 0);
         $tracking = trim((string) ($state['tracking'] ?? ''));
 
+        if ($finds === 0) {
+            return 'Keine Affiliate-Funde';
+        }
+
         $parts = [
             sprintf('%d Affiliate-Funde', $finds),
             sprintf('%d Cards', $cards),
@@ -69,7 +73,7 @@ final class MTB_Affiliate_Audit_Service {
         $state['counts']['affiliate_finds'] = count($markerAsins) + count($linkAsins);
         $state['counts']['card_blocks'] = preg_match_all(self::AFFILIATE_CARD_BLOCK_PATTERN, $content) ?: 0;
         $state['asins'] = array_values(array_unique(array_merge($markerAsins, $linkAsins)));
-        $state['tracking'] = $this->classify_tracking($tags);
+        $state['tracking'] = $this->classify_tracking($tags, (int) $state['counts']['affiliate_finds']);
 
         return $state;
     }
@@ -164,7 +168,11 @@ final class MTB_Affiliate_Audit_Service {
         );
     }
 
-    private function classify_tracking(array $tags): string {
+    private function classify_tracking(array $tags, int $affiliateFinds): string {
+        if ($affiliateFinds <= 0) {
+            return 'keine_funde';
+        }
+
         $tags = array_values(array_unique(array_filter(array_map('strval', $tags))));
         if ($tags === []) {
             return 'unklar';

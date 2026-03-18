@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.26
+
+- klassifiziert Beiträge ohne Affiliate-Funde im Audit jetzt als unkritisch statt als `Unklar`
+- zeigt für solche Beiträge im Kurzlog klar `Keine Affiliate-Funde`
+
 ## 0.2.25
 
 - bewertet bestehende Amazon-Links jetzt gegen den aktuellen Amazon-Titel und unterscheidet zwischen weichem Titel-Mismatch und hartem Fehltreffer

@@ -42,6 +42,17 @@ assert_contains_audit('2 Affiliate-Funde', $log, 'Short log should mention the a
 assert_contains_audit('1 Cards', $log, 'Short log should mention the card block count.');
 assert_contains_audit('Tracking-ID abweichend', $log, 'Short log should explain the tracking verdict.');
 
+$emptyLog = $service->build_short_log([
+    'counts' => [
+        'affiliate_finds' => 0,
+        'card_blocks' => 0,
+    ],
+    'tracking' => 'keine_funde',
+    'status' => 'geprueft',
+]);
+
+assert_same_audit('Keine Affiliate-Funde', $emptyLog, 'Short log should clearly show when a post has no affiliate finds.');
+
 $scan = $service->scan_post_content(<<<HTML
 <!-- wp:paragraph -->
 <p>Inline-Link <a href="https://www.amazon.de/dp/B0TRACK001?tag=meintechblog-260318-21">Produkt</a> und Marker amazon:B0MARKER01.</p>
@@ -65,5 +76,14 @@ HTML);
 
 assert_same_audit(2, $encodedScan['counts']['affiliate_finds'] ?? null, 'Scan should still count both stored Amazon detail URLs inside a single affiliate card block.');
 assert_same_audit('ok', $encodedScan['tracking'] ?? null, 'Scan should normalize block JSON URLs with \\u0026 before evaluating the tracking tag.');
+
+$emptyScan = $service->scan_post_content(<<<HTML
+<!-- wp:paragraph -->
+<p>Kein Affiliate-Link in diesem Beitrag.</p>
+<!-- /wp:paragraph -->
+HTML);
+
+assert_same_audit(0, $emptyScan['counts']['affiliate_finds'] ?? null, 'Scan should report zero affiliate finds for normal content.');
+assert_same_audit('keine_funde', $emptyScan['tracking'] ?? null, 'Scan should classify posts without affiliate finds as non-actionable instead of unclear.');
 
 echo "ok\n";

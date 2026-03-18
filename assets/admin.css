@@ -104,6 +104,11 @@
     color: #374151;
 }
 
+.mtb-affiliate-tracking-pill.is-keine_funde {
+    background: #e5e7eb;
+    color: #374151;
+}
+
 .mtb-affiliate-audit-actions {
     display: flex;
     flex-wrap: wrap;
