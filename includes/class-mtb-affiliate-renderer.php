@@ -25,12 +25,15 @@ final class MTB_Affiliate_Renderer {
         $cta = htmlspecialchars($ctaLabel, ENT_QUOTES, 'UTF-8');
 
         $benefitHtml = $benefit !== '' ? '<div class="mtb-aff-benefit">' . $benefit . '</div>' : '';
+        $imageHtml = $imageUrl !== ''
+            ? '<a class="mtb-aff-img-link" href="' . $detailUrl . '" target="_blank" rel="nofollow noopener sponsored">'
+                . '<div class="mtb-aff-img"><img src="' . $imageUrl . '" alt="' . $title . '" loading="lazy"></div>'
+                . '</a>'
+            : '';
 
         return '<div class="mtb-aff-card" data-asin="' . $asin . '">'
             . '<div class="mtb-aff-badge">' . $badge . '</div>'
-            . '<a class="mtb-aff-img-link" href="' . $detailUrl . '" target="_blank" rel="nofollow noopener sponsored">'
-            . '<div class="mtb-aff-img"><img src="' . $imageUrl . '" alt="' . $title . '" loading="lazy"></div>'
-            . '</a>'
+            . $imageHtml
             . '<div class="mtb-aff-body">'
             . '<div class="mtb-aff-title"><a class="mtb-aff-title-link" href="' . $detailUrl . '" target="_blank" rel="nofollow noopener sponsored">' . $title . '</a></div>'
             . $benefitHtml

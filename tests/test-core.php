@@ -84,6 +84,22 @@ assert_contains('mtb-aff-card', $html, 'Renderer should output the affiliate car
 assert_contains('Preis auf Amazon checken', $html, 'Renderer should use the configured CTA label.');
 assert_contains('Affiliate-Link', $html, 'Renderer should include the affiliate subline.');
 assert_contains('Im Video verwendet', $html, 'Renderer should render the badge label.');
+if (strpos($renderer->render_cards(
+    [[
+        'asin' => 'B0NOIMAGE1',
+        'title' => 'Card Without Image',
+        'image_url' => '',
+        'detail_url' => 'https://example.com/no-image',
+        'benefit' => '',
+    ]],
+    [
+        'badge_label' => 'Im Video verwendet',
+        'cta_label' => 'Preis auf Amazon checken',
+    ]
+), 'img src=""') !== false) {
+    fwrite(STDERR, "Renderer should not emit an empty image tag when no image URL is available.\n");
+    exit(1);
+}
 
 $transport = static function (string $method, string $url, array $headers, ?array $body): array {
     if ($url === 'https://api.amazon.co.uk/auth/o2/token') {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.30
+
+- hydriert manuell eingefuegte Affiliate Cards jetzt automatisch, sobald eine gueltige ASIN eingetragen wird
+- ordnet geladene Produktdaten per `hydratedAsin` sauber der aktuellen ASIN zu, damit beim Wechsel der ASIN keine alten Titel-, Bild- oder Linkreste stehen bleiben
+- rendert im Frontend keine leeren `img src=""`-Platzhalter mehr
+- versucht bei REST-Hydration nach einem ungueltigen Datums-Partner-Tag zusaetzlich einen funktionierenden Partner-Tag aus aktuellen Beitraegen, statt sofort auf leere Fallback-Daten zu kippen
+
 ## 0.2.29
 
 - begrenzt den `save_post`-Pfad jetzt auf explizite `amazon:`-Marker statt normale bestehende Amazon-Links bei jedem Speichern erneut anzufassen

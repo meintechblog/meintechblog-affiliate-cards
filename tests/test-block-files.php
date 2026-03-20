@@ -63,6 +63,11 @@ if (($config['attributes']['loadError']['type'] ?? '') !== 'string') {
     exit(1);
 }
 
+if (($config['attributes']['hydratedAsin']['type'] ?? '') !== 'string') {
+    fwrite(STDERR, "hydratedAsin attribute should be declared as string so manual cards can track which ASIN the hydrated data belongs to.\n");
+    exit(1);
+}
+
 if (($config['usesContext'] ?? []) !== ['postId', 'postType']) {
     fwrite(STDERR, "Block should request postId and postType context for dynamic enrichment.\n");
     exit(1);
@@ -120,6 +125,16 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
 
 if (! str_contains((string) file_get_contents($indexJsPath), 'updateBlockAttributes')) {
     fwrite(STDERR, "Editor index should update block attributes after hydration.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'useEffect')) {
+    fwrite(STDERR, "Editor index should use an effect to hydrate manually inserted cards after ASIN entry.\n");
+    exit(1);
+}
+
+if (! str_contains((string) file_get_contents($indexJsPath), 'hydratedAsin')) {
+    fwrite(STDERR, "Editor index should track hydratedAsin so stale product data can be cleared when the ASIN changes.\n");
     exit(1);
 }
 

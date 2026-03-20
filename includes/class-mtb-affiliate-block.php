@@ -83,8 +83,19 @@ final class MTB_Affiliate_Block {
 
         $item = $items[0];
         $asin = strtoupper(trim((string) ($item['asin'] ?? '')));
+        $hydratedAsin = strtoupper(trim((string) ($attributes['hydratedAsin'] ?? '')));
         $currentTitle = trim((string) ($item['title'] ?? ''));
         $isPlaceholderTitle = $currentTitle === '' || strtoupper($currentTitle) === $asin;
+
+        if ($hydratedAsin !== '' && $hydratedAsin !== $asin) {
+            $item['image_url'] = '';
+            $item['detail_url'] = '';
+            if ($currentTitle === '' || $isPlaceholderTitle) {
+                $item['title'] = $asin;
+            }
+            $items[0] = $item;
+            return $items;
+        }
 
         $amazonTitle = trim((string) ($attributes['amazonTitle'] ?? ''));
         if ($amazonTitle !== '' && $isPlaceholderTitle) {

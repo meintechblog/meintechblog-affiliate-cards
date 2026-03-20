@@ -4,6 +4,8 @@
     const createBlock = blocks.createBlock;
     const InspectorControls = blockEditor.InspectorControls;
     const useBlockProps = blockEditor.useBlockProps;
+    const useEffect = element.useEffect;
+    const useRef = element.useRef;
     const PanelBody = components.PanelBody;
     const TextControl = components.TextControl;
     const TextareaControl = components.TextareaControl;
@@ -78,6 +80,10 @@
         }
 
         return [];
+    }
+
+    function isValidAsin( value ) {
+        return /^[A-Z0-9]{10}$/.test( String( value || '' ).trim().toUpperCase() );
     }
 
     function getLiveHydrationBlock( editorSelect, clientId, asin ) {
@@ -161,6 +167,7 @@
             const nextAttributes = {
                 loadState: 'ready',
                 loadError: '',
+                hydratedAsin: asin,
                 items: [ nextItem ]
             };
 
@@ -191,7 +198,8 @@
             }
             editorDispatch.updateBlockAttributes( clientId, {
                 loadState: 'error',
-                loadError: message
+                loadError: message,
+                hydratedAsin: ''
             } );
         } );
     }
@@ -318,12 +326,76 @@
         const detailUrl = item.detail_url || attributes.detailUrl || '';
         const isLoading = attributes.loadState === 'loading';
         const hasError = attributes.loadState === 'error';
+        const currentAsin = item.asin ? String( item.asin ).trim().toUpperCase() : '';
+        const hydrationAsinRef = useRef( currentAsin );
 
         function updateItem( key, value ) {
             props.setAttributes( {
                 items: [ Object.assign( {}, item, { [ key ]: value } ) ]
             } );
         }
+
+        useEffect( function () {
+            if (
+                ! window.wp ||
+                ! window.wp.data ||
+                ! window.wp.data.select ||
+                ! window.wp.data.dispatch
+            ) {
+                return;
+            }
+
+            const asin = currentAsin;
+            const previousAsin = hydrationAsinRef.current;
+            hydrationAsinRef.current = asin;
+
+            if ( ! isValidAsin( asin ) ) {
+                return;
+            }
+
+            const hasHydratedData = attributes.hydratedAsin === asin && Boolean(
+                attributes.amazonTitle ||
+                ( Array.isArray( attributes.images ) && attributes.images.length ) ||
+                attributes.detailUrl ||
+                item.image_url ||
+                item.detail_url
+            );
+
+            const asinChanged = previousAsin !== '' && previousAsin !== asin;
+            if ( ! asinChanged && ( hasHydratedData || attributes.loadState === 'loading' ) ) {
+                return;
+            }
+
+            const editorSelect = window.wp.data.select( 'core/block-editor' );
+            const editorDispatch = window.wp.data.dispatch( 'core/block-editor' );
+            const postSelect = window.wp.data.select( 'core/editor' );
+
+            const nextItem = Object.assign( {}, item, {
+                asin: asin,
+                title: asin,
+                image_url: '',
+                detail_url: ''
+            } );
+
+            props.setAttributes( {
+                amazonTitle: '',
+                detailUrl: '',
+                images: [],
+                selectedImageIndex: 0,
+                loadState: 'loading',
+                loadError: '',
+                hydratedAsin: '',
+                items: [ nextItem ]
+            } );
+
+            hydrateAffiliateBlock(
+                editorSelect,
+                editorDispatch,
+                props.clientId,
+                asin,
+                postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0
+            );
+        }, [ currentAsin ] );
 
         function updateBadgeMode( value ) {
             props.setAttributes( { badgeMode: value } );
@@ -403,7 +475,7 @@
                         label: i18n.__( 'Produkt-ASIN', 'meintechblog-affiliate-cards' ),
                         value: item.asin || '',
                         onChange: function ( value ) {
-                            updateItem( 'asin', value );
+                            updateItem( 'asin', value.trim().toUpperCase() );
                         }
                     } ),
                     el( SelectControl, {

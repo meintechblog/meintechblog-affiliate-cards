@@ -43,6 +43,10 @@
       "type": "string",
       "default": ""
     },
+    "hydratedAsin": {
+      "type": "string",
+      "default": ""
+    },
     "badgeMode": {
       "type": "string",
       "default": "auto"
