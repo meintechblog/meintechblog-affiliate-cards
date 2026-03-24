@@ -31,6 +31,13 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 - [ ] **EDIT-03**: Affiliate Card Block hat Dropdown-Picker mit gespeicherten Produkten (neueste oben)
 - [ ] **EDIT-04**: Dropdown-Auswahl hydrated den Block identisch zu manueller ASIN-Eingabe
 
+### Tracking-ID Registry
+
+- [ ] **TRID-01**: Plugin speichert alle verfuegbaren Tracking-IDs in DB (eigene Tabelle)
+- [ ] **TRID-02**: Bestehende Tracking-IDs koennen per Backfill importiert werden (~170 IDs)
+- [ ] **TRID-03**: Bot warnt per Telegram wenn ein Post-Datum keine passende Tracking-ID hat
+- [ ] **TRID-04**: User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
+
 ### Settings
 
 - [ ] **SETT-01**: Bot-Token ist in Plugin-Settings konfigurierbar
@@ -68,30 +75,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TGBOT-01 | -- | Pending |
-| TGBOT-02 | -- | Pending |
-| TGBOT-03 | -- | Pending |
-| TGBOT-04 | -- | Pending |
-| TGBOT-05 | -- | Pending |
-| TGBOT-06 | -- | Pending |
-| TGBOT-07 | -- | Pending |
-| PLIB-01 | -- | Pending |
-| PLIB-02 | -- | Pending |
-| PLIB-03 | -- | Pending |
-| PLIB-04 | -- | Pending |
-| EDIT-01 | -- | Pending |
-| EDIT-02 | -- | Pending |
-| EDIT-03 | -- | Pending |
-| EDIT-04 | -- | Pending |
-| SETT-01 | -- | Pending |
-| SETT-02 | -- | Pending |
-| SETT-03 | -- | Pending |
+| TGBOT-01 | Phase 1 | Pending |
+| TGBOT-02 | Phase 1 | Pending |
+| TGBOT-03 | Phase 1 | Pending |
+| TGBOT-04 | Phase 1 | Pending |
+| TGBOT-05 | Phase 1 | Pending |
+| TGBOT-06 | Phase 1 | Pending |
+| TGBOT-07 | Phase 1 | Pending |
+| PLIB-01 | Phase 2 | Pending |
+| PLIB-02 | Phase 2 | Pending |
+| PLIB-03 | Phase 2 | Pending |
+| PLIB-04 | Phase 4 | Pending |
+| EDIT-01 | Phase 3 | Pending |
+| EDIT-02 | Phase 3 | Pending |
+| EDIT-03 | Phase 4 | Pending |
+| EDIT-04 | Phase 4 | Pending |
+| TRID-01 | Phase 2 | Pending |
+| TRID-02 | Phase 2 | Pending |
+| TRID-03 | Phase 1 | Pending |
+| TRID-04 | Phase 1 | Pending |
+| SETT-01 | Phase 1 | Pending |
+| SETT-02 | Phase 1 | Pending |
+| SETT-03 | Phase 1 | Pending |
 
 **Coverage:**
-- v1.0 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18
+- v1.0 requirements: 22 total
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 after initial definition*
+*Last updated: 2026-03-25 after adding Tracking-ID Registry requirements (TRID-01..04)*
