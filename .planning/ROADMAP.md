@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Sending a date string (`heute`, `YYMMDD`, `DD.MM.YY`) or `reset` changes the tracking ID used in subsequent replies; messages from unauthorized chat IDs are silently ignored
   6. Bot warnt per Telegram wenn fuer das Post-Datum keine Tracking-ID in der Registry hinterlegt ist
   7. User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [x] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
 - [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
@@ -49,7 +49,10 @@ Plans:
   4. Plugin activation on a fresh site creates the tables without manual SQL; re-activation on an existing site does not destroy data
   5. Tracking-ID Registry Tabelle speichert alle verfuegbaren Tracking-IDs mit Erstellungsdatum
   6. ~170 bestehende Tracking-IDs sind per Backfill-Script importierbar
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — Product Library class + table creation + REST endpoints + plugin wiring
+- [ ] 02-02-PLAN.md — Telegram handler product storage integration + tracking-ID backfill script
 
 ### Phase 3: Token Extension
 **Goal**: Posts saved with `amazon:last` or `amazon:lastN` paragraph tokens are automatically converted to affiliate-card blocks using the most-recently-received products
@@ -80,7 +83,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Settings + Telegram Webhook Pipeline | 1/3 | In Progress|  |
-| 2. Product Library + Tracking-ID Registry | 0/? | Not started | - |
+| 1. Settings + Telegram Webhook Pipeline | 2/3 | In Progress|  |
+| 2. Product Library + Tracking-ID Registry | 0/2 | Planned | - |
 | 3. Token Extension | 0/? | Not started | - |
 | 4. Editor Enhancements + Admin Page | 0/? | Not started | - |
