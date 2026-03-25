@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-25T01:21:19.355Z"
+status: Ready to execute
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-25T01:49:14.808Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Affiliate-Produkte in unter 30 Sekunden von Telegram-Nachricht in WordPress-Blogpost
-**Current focus:** Phase 02 — product-library-tracking-id-registry
+**Current focus:** Phase 03 — token-extension
 
 ## Current Position
 
-Phase: 02 (product-library-tracking-id-registry) — EXECUTING
+Phase: 03 (token-extension) — EXECUTING
 Plan: 2 of 2
 
 ## Performance Metrics
@@ -46,6 +46,7 @@ Plan: 2 of 2
 | Phase 01-settings-telegram-webhook-pipeline P02 | 151 | 2 tasks | 4 files |
 | Phase 02-product-library-tracking-id-registry P01 | 112s | 2 tasks | 4 files |
 | Phase 02 P02 | 120 | 2 tasks | 3 files |
+| Phase 03-token-extension P01 | 107s | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 02-product-library-tracking-id-registry]: productLibrary injected as 4th param (not 5th) into REST controller in this branch — telegramHandler not present in worktree; merge will reconcile parameter order
 - [Phase 02]: save_product() called after update_option() in both ASIN paths so product is saved even if bot reply fails
 - [Phase 02]: Backfill imports anomalous IDs as-is (eintechblog-*, facebook-2017-21, etc) as real historical IDs
+- [Phase 03-token-extension]: Removed 'final' from MTB_Affiliate_Product_Library to allow test double subclassing per plan spec
+- [Phase 03-token-extension]: Fast-path strpos check in Token_Prepass avoids regex overhead on posts without shorthand tokens
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:21:19.352Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-25T01:49:14.805Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

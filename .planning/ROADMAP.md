@@ -64,9 +64,9 @@ Plans:
   3. `amazon:gestern` or `amazon:yesterday` inserts ALL products received yesterday as sequential affiliate cards
   4. Inline tokens (within text) link the first product and add cards below the paragraph
   5. No regressions in existing `amazon:ASIN` token processing
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 03-01-PLAN.md — Product Library date methods + Token Prepass class with unit tests
+- [x] 03-01-PLAN.md — Product Library date methods + Token Prepass class with unit tests
 - [ ] 03-02-PLAN.md — Wire prepass into handle_save_post + integration tests
 
 ### Phase 4: Editor Enhancements + Admin Page
@@ -90,5 +90,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Settings + Telegram Webhook Pipeline | 2/3 | In Progress|  |
 | 2. Product Library + Tracking-ID Registry | 2/2 | Complete   | 2026-03-25 |
-| 3. Token Extension | 0/2 | Planned | - |
+| 3. Token Extension | 1/2 | In Progress|  |
 | 4. Editor Enhancements + Admin Page | 0/? | Not started | - |
