@@ -27,8 +27,10 @@ class MTB_Affiliate_Product_Library_List_Table extends WP_List_Table {
     public function get_columns(): array {
         return [
             'cb'          => '<input type="checkbox">',
+            'image'       => __( 'Bild', 'meintechblog-affiliate-cards' ),
             'asin'        => __( 'ASIN', 'meintechblog-affiliate-cards' ),
             'title'       => __( 'Titel', 'meintechblog-affiliate-cards' ),
+            'benefit'     => __( 'Beschreibung', 'meintechblog-affiliate-cards' ),
             'received_at' => __( 'Empfangen', 'meintechblog-affiliate-cards' ),
         ];
     }
@@ -39,6 +41,23 @@ class MTB_Affiliate_Product_Library_List_Table extends WP_List_Table {
 
     protected function column_cb( $item ): string {
         return '<input type="checkbox" name="product_ids[]" value="' . (int) $item['id'] . '">';
+    }
+
+    protected function column_image( $item ): string {
+        $url = (string) ( $item['image_url'] ?? '' );
+        if ( $url === '' ) {
+            return '<span style="color:#999">—</span>';
+        }
+        return '<img src="' . esc_url( $url ) . '" alt="" style="width:48px;height:48px;object-fit:contain;background:#f9f9f9;border-radius:4px;" loading="lazy">';
+    }
+
+    protected function column_benefit( $item ): string {
+        $benefit = (string) ( $item['benefit'] ?? '' );
+        if ( $benefit === '' ) {
+            return '<span style="color:#999">—</span>';
+        }
+        $short = mb_strlen( $benefit ) > 80 ? mb_substr( $benefit, 0, 80 ) . '…' : $benefit;
+        return esc_html( $short );
     }
 
     protected function column_default( $item, $column_name ): string {

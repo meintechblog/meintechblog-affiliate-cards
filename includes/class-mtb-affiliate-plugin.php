@@ -62,6 +62,7 @@ final class MTB_Affiliate_Plugin {
         add_action('init', [$this->block, 'register']);
         add_action('rest_api_init', [$this->restController, 'register_routes']);
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+        add_action('save_post', [$this, 'handle_save_post_sync_library'], 30, 2);
         add_action('admin_post_mtb_affiliate_audit', [$this, 'handle_audit_admin_post']);
         add_action('wp_ajax_mtb_check_webhook_status', [$this, 'ajax_check_webhook_status']);
     }
@@ -554,6 +555,92 @@ final class MTB_Affiliate_Plugin {
         ]);
 
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+    }
+
+    /**
+     * Sync affiliate card block data back to the product library on every save.
+     * Runs at priority 30 (after handle_save_post at 20) so processed content is used.
+     */
+    public function handle_save_post_sync_library(int $postId, $post = null): void {
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+        if (function_exists('wp_is_post_revision') && wp_is_post_revision($postId)) {
+            return;
+        }
+        if (! is_object($post) && function_exists('get_post')) {
+            $post = get_post($postId);
+        }
+        if (! is_object($post) || ! isset($post->post_content)) {
+            return;
+        }
+        $content = (string) $post->post_content;
+        if (stripos($content, 'meintechblog/affiliate-cards') === false) {
+            return;
+        }
+        $this->sync_blocks_to_library($content);
+    }
+
+    /**
+     * Extract affiliate card block data and update the product library.
+     * When authors set a title, benefit, or image in the editor, those
+     * values flow back into the library for future reuse.
+     */
+    private function sync_blocks_to_library(string $content): void {
+        if (! function_exists('parse_blocks')) {
+            return;
+        }
+
+        $blocks = parse_blocks($content);
+        foreach ($blocks as $block) {
+            if (($block['blockName'] ?? '') !== 'meintechblog/affiliate-cards') {
+                continue;
+            }
+
+            $attrs = $block['attrs'] ?? [];
+            $items = $attrs['items'] ?? [];
+            $item  = $items[0] ?? [];
+            $asin  = strtoupper(trim((string) ($item['asin'] ?? '')));
+
+            if ($asin === '' || ! preg_match('/^[A-Z0-9]{10}$/', $asin)) {
+                continue;
+            }
+
+            $updates = [];
+
+            // Title: prefer titleOverride > item title > amazonTitle (top-level attr)
+            $title = (string) ($item['titleOverride'] ?? '');
+            if ($title === '') { $title = (string) ($item['title'] ?? ''); }
+            if ($title === '' || $title === $asin) { $title = (string) ($attrs['amazonTitle'] ?? ''); }
+            if ($title !== '' && $title !== $asin) {
+                $updates['title'] = $title;
+            }
+
+            // Benefit from item
+            if (! empty($item['benefit'])) {
+                $updates['benefit'] = (string) $item['benefit'];
+            }
+
+            // Image: prefer item image_url > first from top-level images array
+            $imageUrl = (string) ($item['image_url'] ?? '');
+            if ($imageUrl === '' && ! empty($attrs['images']) && is_array($attrs['images'])) {
+                $imageUrl = (string) ($attrs['images'][0] ?? '');
+            }
+            if ($imageUrl !== '') {
+                $updates['image_url'] = $imageUrl;
+            }
+
+            // Detail URL
+            $detailUrl = (string) ($item['detail_url'] ?? '');
+            if ($detailUrl === '') { $detailUrl = (string) ($attrs['detailUrl'] ?? ''); }
+            if ($detailUrl !== '') {
+                $updates['detail_url'] = $detailUrl;
+            }
+
+            if ($updates !== []) {
+                $this->productLibrary->update_by_asin($asin, $updates);
+            }
+        }
     }
 
     private function run_affiliate_audit(int $postId, bool $straighten): array {

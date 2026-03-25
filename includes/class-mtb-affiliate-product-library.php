@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 class MTB_Affiliate_Product_Library {
     private const TABLE_SUFFIX = 'mtb_affiliate_products';
-    private const DB_VERSION = '1.0';
+    private const DB_VERSION = '1.1';
     private const DB_VERSION_OPTION = 'mtb_affiliate_products_db_version';
 
     public static function create_table(): void {
@@ -19,6 +19,7 @@ class MTB_Affiliate_Product_Library {
   title varchar(500) NOT NULL DEFAULT '',
   detail_url text NOT NULL,
   image_url text NOT NULL,
+  benefit text NOT NULL DEFAULT '',
   received_at datetime NOT NULL,
   PRIMARY KEY  (id),
   KEY asin (asin),
@@ -27,6 +28,12 @@ class MTB_Affiliate_Product_Library {
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
+
+        // Explicit migration for existing installs where dbDelta may not add columns
+        $cols = $wpdb->get_col("SHOW COLUMNS FROM {$table}");
+        if (! in_array('benefit', $cols, true)) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN benefit text NOT NULL DEFAULT '' AFTER image_url");
+        }
 
         update_option(self::DB_VERSION_OPTION, self::DB_VERSION, false);
     }
@@ -55,13 +62,14 @@ class MTB_Affiliate_Product_Library {
             'title'       => (string) ($product['title'] ?? ''),
             'detail_url'  => (string) ($product['detail_url'] ?? ''),
             'image_url'   => (string) ($product['image_url'] ?? ''),
+            'benefit'     => (string) ($product['benefit'] ?? ''),
             'received_at' => current_time('mysql', true),
         ];
 
         $result = $wpdb->insert(
             $this->table_name(),
             $data,
-            ['%s', '%s', '%s', '%s', '%s']
+            ['%s', '%s', '%s', '%s', '%s', '%s']
         );
 
         if ($result === false) {
@@ -156,6 +164,50 @@ class MTB_Affiliate_Product_Library {
      */
     public function get_products_yesterday(): array {
         return $this->get_products_by_date(gmdate('Y-m-d', strtotime('-1 day')));
+    }
+
+    /**
+     * Update the most recent product entry for a given ASIN.
+     * Only non-empty values are written — existing data is preserved.
+     *
+     * @param string $asin The ASIN to update.
+     * @param array  $fields Accepts: title, image_url, detail_url, benefit.
+     * @return bool True if a row was updated.
+     */
+    public function update_by_asin(string $asin, array $fields): bool {
+        global $wpdb;
+
+        $asin = strtoupper(trim($asin));
+        if ($asin === '' || !preg_match('/^[A-Z0-9]{10}$/', $asin)) {
+            return false;
+        }
+
+        $allowed = ['title', 'image_url', 'detail_url', 'benefit'];
+        $updates = [];
+        $formats = [];
+        foreach ($allowed as $key) {
+            if (isset($fields[$key]) && (string) $fields[$key] !== '') {
+                $updates[$key] = (string) $fields[$key];
+                $formats[]     = '%s';
+            }
+        }
+
+        if ($updates === []) {
+            return false;
+        }
+
+        $table = $this->table_name();
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT id FROM {$table} WHERE asin = %s ORDER BY received_at DESC LIMIT 1", $asin),
+            ARRAY_A
+        );
+
+        if (!$row) {
+            return false;
+        }
+
+        $result = $wpdb->update($table, $updates, ['id' => (int) $row['id']], $formats, ['%d']);
+        return $result !== false;
     }
 
     /**

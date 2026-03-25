@@ -627,10 +627,10 @@
                         value: '',
                         options: [ { label: '— Produkt auswählen —', value: '' } ].concat(
                             products.map( function ( p ) {
-                                return {
-                                    label: ( p.title || p.asin ) + ' (' + p.asin + ')',
-                                    value: p.asin
-                                };
+                                var title = p.title && p.title !== p.asin ? p.title : '';
+                                if ( title.length > 35 ) { title = title.substring( 0, 35 ) + '…'; }
+                                var label = title ? title + ' (' + p.asin + ')' : p.asin;
+                                return { label: label, value: p.asin };
                             } )
                         ),
                         onChange: function ( value ) {
