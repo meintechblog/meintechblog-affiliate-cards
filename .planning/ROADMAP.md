@@ -31,7 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Sending a date string (`heute`, `YYMMDD`, `DD.MM.YY`) or `reset` changes the tracking ID used in subsequent replies; messages from unauthorized chat IDs are silently ignored
   6. Bot warnt per Telegram wenn fuer das Post-Datum keine Tracking-ID in der Registry hinterlegt ist
   7. User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
+- [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
+- [ ] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
 **UI hint**: yes
 
 ### Phase 2: Product Library + Tracking-ID Registry
@@ -45,7 +49,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Plugin activation on a fresh site creates the tables without manual SQL; re-activation on an existing site does not destroy data
   5. Tracking-ID Registry Tabelle speichert alle verfuegbaren Tracking-IDs mit Erstellungsdatum
   6. ~170 bestehende Tracking-IDs sind per Backfill-Script importierbar
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
+- [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
+- [ ] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
 
 ### Phase 3: Token Extension
 **Goal**: Posts saved with `amazon:last` or `amazon:lastN` paragraph tokens are automatically converted to affiliate-card blocks using the most-recently-received products
@@ -55,7 +63,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. Saving a post that contains an `amazon:last` token in a paragraph block converts it to an affiliate card block using the ASIN from the most-recently-received product
   2. `amazon:last2` converts to the second-most-recent product; `amazon:last3` to the third; no unsolved tokens remain in the saved post content
   3. A post that contains no `amazon:last` tokens is saved identically to before — no regressions in existing token processing
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
+- [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
+- [ ] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
 
 ### Phase 4: Editor Enhancements + Admin Page
 **Goal**: Authors can visually pick a saved product from a dropdown in the block editor, and can inspect the full product library without database access
@@ -66,7 +78,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Selecting a product from the dropdown hydrates the block identically to typing an ASIN manually — image, title, and affiliate link all render correctly
   3. Typing `amazon:last` or `amazon:last2` in the editor's ASIN field resolves the token live in the editor preview (before saving)
   4. The WordPress admin has a "Produkt-Bibliothek" page showing all stored products in a list table with bulk-delete capability
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
+- [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
+- [ ] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
 **UI hint**: yes
 
 ## Progress
