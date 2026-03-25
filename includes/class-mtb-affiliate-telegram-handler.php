@@ -15,15 +15,18 @@ final class MTB_Affiliate_Telegram_Handler {
     private MTB_Affiliate_Settings $settings;
     private MTB_Affiliate_Url_Resolver $urlResolver;
     private MTB_Affiliate_Tracking_Registry $trackingRegistry;
+    private ?MTB_Affiliate_Product_Library $productLibrary;
 
     public function __construct(
         MTB_Affiliate_Settings $settings,
         MTB_Affiliate_Url_Resolver $urlResolver,
-        MTB_Affiliate_Tracking_Registry $trackingRegistry
+        MTB_Affiliate_Tracking_Registry $trackingRegistry,
+        ?MTB_Affiliate_Product_Library $productLibrary = null
     ) {
         $this->settings         = $settings;
         $this->urlResolver      = $urlResolver;
         $this->trackingRegistry = $trackingRegistry;
+        $this->productLibrary   = $productLibrary;
     }
 
     public function handle(array $payload): void {
@@ -155,6 +158,7 @@ final class MTB_Affiliate_Telegram_Handler {
                 return;
             }
             update_option(self::LAST_ASIN_OPTION, $asin, false);
+            $this->save_product($asin);
             $this->send_message($botToken, $chatId, $this->build_affiliate_url($asin, $trackingId));
             $this->maybe_warn_unregistered($trackingId, $chatId, $botToken);
             return;
@@ -164,6 +168,7 @@ final class MTB_Affiliate_Telegram_Handler {
         if (preg_match(self::ASIN_PATTERN, $input)) {
             $asin = strtoupper($input);
             update_option(self::LAST_ASIN_OPTION, $asin, false);
+            $this->save_product($asin);
             $this->send_message($botToken, $chatId, $this->build_affiliate_url($asin, $trackingId));
             $this->maybe_warn_unregistered($trackingId, $chatId, $botToken);
             return;
@@ -230,6 +235,22 @@ final class MTB_Affiliate_Telegram_Handler {
                 ]),
             ]
         );
+    }
+
+    /**
+     * Saves a product to the library. ASIN-only at this stage;
+     * title/images can be enriched later via Amazon Creators API.
+     */
+    private function save_product(string $asin): void {
+        if ($this->productLibrary === null) {
+            return;
+        }
+        $this->productLibrary->insert([
+            'asin'       => $asin,
+            'title'      => '',
+            'detail_url' => "https://www.amazon.de/dp/{$asin}",
+            'image_url'  => '',
+        ]);
     }
 
     /**

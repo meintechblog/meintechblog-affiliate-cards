@@ -17,8 +17,6 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Url_Resolver $urlResolver;
     private MTB_Affiliate_Telegram_Handler $telegramHandler;
 
-    private MTB_Affiliate_Product_Library $productLibrary;
-
     private function __construct() {
         $this->settings         = new MTB_Affiliate_Settings();
         $this->auditService     = new MTB_Affiliate_Audit_Service();
@@ -29,7 +27,8 @@ final class MTB_Affiliate_Plugin {
         $this->telegramHandler  = new MTB_Affiliate_Telegram_Handler(
             $this->settings,
             $this->urlResolver,
-            $this->trackingRegistry
+            $this->trackingRegistry,
+            $this->productLibrary
         );
         $this->block          = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
         $this->restController = new MTB_Affiliate_Rest_Controller(
