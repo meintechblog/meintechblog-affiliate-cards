@@ -145,7 +145,11 @@
         return liveBlock;
     }
 
-    function hydrateAffiliateBlock( editorSelect, editorDispatch, clientId, asin, postId ) {
+    function hydrateAffiliateBlock( editorSelect, editorDispatch, clientId, asin, postId, attempt ) {
+        attempt = attempt || 1;
+        var MAX_RETRIES = 3;
+        var RETRY_DELAY = 2000;
+
         const headers = {};
         if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
             headers[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
@@ -177,6 +181,14 @@
             }
             const attrs = liveBlock.attributes || {};
             if ( attrs.loadState !== 'loading' ) {
+                return;
+            }
+
+            /* Auto-retry if no images returned and retries remain */
+            if ( images.length === 0 && attempt < MAX_RETRIES ) {
+                window.setTimeout( function () {
+                    hydrateAffiliateBlock( editorSelect, editorDispatch, clientId, asin, postId, attempt + 1 );
+                }, RETRY_DELAY );
                 return;
             }
 
@@ -222,6 +234,13 @@
 
             editorDispatch.updateBlockAttributes( clientId, nextAttributes );
         } ).catch( function ( error ) {
+            /* Auto-retry on network/API error */
+            if ( attempt < MAX_RETRIES ) {
+                window.setTimeout( function () {
+                    hydrateAffiliateBlock( editorSelect, editorDispatch, clientId, asin, postId, attempt + 1 );
+                }, RETRY_DELAY );
+                return;
+            }
             const message = error && error.message ? error.message : 'Hydration failed';
             const liveBlock = getLiveHydrationBlock( editorSelect, clientId, asin );
             if ( ! liveBlock ) {
