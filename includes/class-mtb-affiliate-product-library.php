@@ -158,6 +158,25 @@ class MTB_Affiliate_Product_Library {
         return $this->get_products_by_date(gmdate('Y-m-d', strtotime('-1 day')));
     }
 
+    /**
+     * Delete products by their IDs.
+     *
+     * @param array $ids Array of integer row IDs.
+     * @return int Number of rows deleted.
+     */
+    public function delete_by_ids(array $ids): int {
+        global $wpdb;
+        if ($ids === []) {
+            return 0;
+        }
+        $ids          = array_map('intval', $ids);
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $result       = $wpdb->query(
+            $wpdb->prepare("DELETE FROM {$this->table_name()} WHERE id IN ({$placeholders})", ...$ids)
+        );
+        return is_int($result) ? $result : 0;
+    }
+
     public static function needs_upgrade(): bool {
         return get_option(self::DB_VERSION_OPTION, '0') !== self::DB_VERSION;
     }
