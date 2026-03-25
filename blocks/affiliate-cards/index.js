@@ -347,10 +347,45 @@
                                 /* Inline: replace token with affiliate link */
                                 var product = products[ 0 ];
                                 var pAsin = String( product.asin || '' ).toUpperCase();
-                                var pTitle = product.title && product.title !== pAsin ? product.title : pAsin;
-                                var pUrl = product.detail_url || 'https://www.amazon.de/dp/' + pAsin;
+                                var pTitle = product.title && product.title !== pAsin ? product.title : '';
+                                var pDetailUrl = product.detail_url || 'https://www.amazon.de/dp/' + pAsin;
+
+                                /* If no title from library, fetch from hydration API (Amazon lookup) */
+                                if ( ! pTitle ) {
+                                    var hPostId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
+                                    var hUrl2 = buildHydrationUrl( pAsin, hPostId );
+                                    var hHdr2 = {};
+                                    if ( window.wpApiSettings && window.wpApiSettings.nonce ) { hHdr2[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce; }
+                                    fetch( hUrl2, { credentials: 'same-origin', headers: hHdr2 } )
+                                        .then( function ( r ) { return r.ok ? r.json() : null; } )
+                                        .then( function ( payload ) {
+                                            var title = payload && payload.title ? payload.title : pAsin;
+                                            var detUrl = payload && payload.detailUrl ? payload.detailUrl : pDetailUrl;
+                                            if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
+                                            var lnk = '<a href="' + detUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
+                                            var lb = editorSelect.getBlock( shorthandBlock.clientId );
+                                            if ( ! lb ) { return; }
+                                            var cc = String( lb.attributes && lb.attributes.content || '' );
+                                            editorDispatch.updateBlockAttributes( shorthandBlock.clientId, {
+                                                content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, lnk )
+                                            } );
+                                            showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
+                                        } )
+                                        .catch( function () {
+                                            /* Fallback: use ASIN as link text */
+                                            var lnk = '<a href="' + pDetailUrl + '" rel="nofollow noopener sponsored">' + pAsin + '</a> (Affiliate-Link)';
+                                            var lb = editorSelect.getBlock( shorthandBlock.clientId );
+                                            if ( ! lb ) { return; }
+                                            var cc = String( lb.attributes && lb.attributes.content || '' );
+                                            editorDispatch.updateBlockAttributes( shorthandBlock.clientId, {
+                                                content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, lnk )
+                                            } );
+                                        } );
+                                    return;
+                                }
+
                                 if ( pTitle.length > 60 ) { pTitle = pTitle.substring( 0, 60 ) + '\u2026'; }
-                                var linkHtml = '<a href="' + pUrl + '" rel="nofollow noopener sponsored">' + pTitle + '</a> (Affiliate-Link)';
+                                var linkHtml = '<a href="' + pDetailUrl + '" rel="nofollow noopener sponsored">' + pTitle + '</a> (Affiliate-Link)';
                                 var liveBlock = editorSelect.getBlock( shorthandBlock.clientId );
                                 if ( ! liveBlock ) { return; }
                                 var curContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
