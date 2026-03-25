@@ -62,8 +62,9 @@ final class MTB_Affiliate_Rest_Controller {
         $expectedSecret = $settings['telegram_webhook_secret'] ?? '';
         $receivedSecret = $request->get_header('x-telegram-bot-api-secret-token') ?? '';
 
-        if ($expectedSecret === '' || ! hash_equals($expectedSecret, $receivedSecret)) {
-            return new \WP_REST_Response(null, 403);
+        if ($expectedSecret === '' || $receivedSecret === '' || ! hash_equals($expectedSecret, $receivedSecret)) {
+            // Always 200 to Telegram — never 403, or Telegram deletes the webhook
+            return new \WP_REST_Response(null, 200);
         }
 
         // 2. Chat-ID filtering (D-14) — optional, silently ignore unauthorized
