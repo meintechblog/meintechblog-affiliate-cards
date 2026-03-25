@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Settings + Telegram Webhook Pipeline** - Bot credentials in settings; full end-to-end Telegram message processing with affiliate link reply
 - [x] **Phase 2: Product Library + Tracking-ID Registry** - Custom DB tables persisting products and tracking IDs; REST endpoints; backfill (completed 2026-03-25)
 - [x] **Phase 3: Token Extension** - Server-side `amazon:last` / `amazon:heute` / `amazon:gestern` pre-pass in Post Processor (completed 2026-03-25)
-- [ ] **Phase 4: Editor Enhancements + Admin Page** - Dropdown picker in Gutenberg block; live editor tokens; WP_List_Table admin page
+- [x] **Phase 4: Editor Enhancements + Admin Page** - Dropdown picker in Gutenberg block; live editor tokens; WP_List_Table admin page (completed 2026-03-25)
 
 ## Phase Details
 
@@ -78,10 +78,10 @@ Plans:
   2. Selecting a product from the dropdown hydrates the block identically to typing an ASIN manually — image, title, and affiliate link all render correctly
   3. Typing `amazon:last` or `amazon:last2` in the editor's ASIN field resolves the token live in the editor preview (before saving) [ALREADY DONE — commit 6831f66]
   4. The WordPress admin has a "Produkt-Bibliothek" page showing all stored products in a list table with bulk-delete capability
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 04-01-PLAN.md — Product dropdown in block sidebar (JS only, index.js)
-- [ ] 04-02-PLAN.md — Produkt-Bibliothek admin page (PHP: WP_List_Table + menu + delete_by_ids)
+- [x] 04-02-PLAN.md — Produkt-Bibliothek admin page (PHP: WP_List_Table + menu + delete_by_ids)
 **UI hint**: yes
 
 ## Progress
@@ -94,4 +94,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Settings + Telegram Webhook Pipeline | 2/3 | In Progress|  |
 | 2. Product Library + Tracking-ID Registry | 2/2 | Complete   | 2026-03-25 |
 | 3. Token Extension | 2/2 | Complete   | 2026-03-25 |
-| 4. Editor Enhancements + Admin Page | 1/2 | In Progress|  |
+| 4. Editor Enhancements + Admin Page | 2/2 | Complete   | 2026-03-25 |

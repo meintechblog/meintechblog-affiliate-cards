@@ -22,7 +22,7 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 - [x] **PLIB-01**: Empfangene Produkte werden automatisch in Custom DB Table gespeichert
 - [x] **PLIB-02**: Produkt-Eintrag enthaelt ASIN, Titel, Detail-URL, Bild-URL, Empfangsdatum
 - [x] **PLIB-03**: REST API Endpoint liefert gespeicherte Produkte (sortiert nach Datum, neueste zuerst)
-- [ ] **PLIB-04**: Admin-Seite zeigt alle gespeicherten Produkte als WP_List_Table
+- [x] **PLIB-04**: Admin-Seite zeigt alle gespeicherten Produkte als WP_List_Table
 
 ### Editor-Erweiterung
 
@@ -86,7 +86,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLIB-01 | Phase 2 | Complete |
 | PLIB-02 | Phase 2 | Complete |
 | PLIB-03 | Phase 2 | Complete |
-| PLIB-04 | Phase 4 | Pending |
+| PLIB-04 | Phase 4 | Complete |
 | EDIT-01 | Phase 3 | Complete |
 | EDIT-02 | Phase 3 | Complete |
 | EDIT-03 | Phase 4 | Complete |
