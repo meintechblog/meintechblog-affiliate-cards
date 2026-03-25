@@ -11,10 +11,13 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Block $block;
     private MTB_Affiliate_Audit_Service $auditService;
     private MTB_Affiliate_Amazon_Client $amazonClient;
+    private MTB_Affiliate_Product_Library $productLibrary;
     private MTB_Affiliate_Rest_Controller $restController;
     private MTB_Affiliate_Tracking_Registry $trackingRegistry;
     private MTB_Affiliate_Url_Resolver $urlResolver;
     private MTB_Affiliate_Telegram_Handler $telegramHandler;
+
+    private MTB_Affiliate_Product_Library $productLibrary;
 
     private function __construct() {
         $this->settings         = new MTB_Affiliate_Settings();
@@ -22,6 +25,7 @@ final class MTB_Affiliate_Plugin {
         $this->amazonClient     = new MTB_Affiliate_Amazon_Client();
         $this->trackingRegistry = new MTB_Affiliate_Tracking_Registry();
         $this->urlResolver      = new MTB_Affiliate_Url_Resolver();
+        $this->productLibrary   = new MTB_Affiliate_Product_Library();
         $this->telegramHandler  = new MTB_Affiliate_Telegram_Handler(
             $this->settings,
             $this->urlResolver,
@@ -32,7 +36,8 @@ final class MTB_Affiliate_Plugin {
             $this->settings,
             $this->amazonClient,
             null,
-            $this->telegramHandler
+            $this->telegramHandler,
+            $this->productLibrary
         );
     }
 
@@ -63,6 +68,7 @@ final class MTB_Affiliate_Plugin {
         $settings = new MTB_Affiliate_Settings();
         $settings->save($settings->defaults());
         MTB_Affiliate_Tracking_Registry::create_table();
+        MTB_Affiliate_Product_Library::create_table();
     }
 
     public function ajax_check_webhook_status(): void {

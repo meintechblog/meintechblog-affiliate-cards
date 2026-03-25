@@ -7,17 +7,20 @@ final class MTB_Affiliate_Rest_Controller {
     private MTB_Affiliate_Amazon_Client $amazonClient;
     private MTB_Affiliate_Badge_Resolver $badgeResolver;
     private ?MTB_Affiliate_Telegram_Handler $telegramHandler;
+    private ?MTB_Affiliate_Product_Library $productLibrary;
 
     public function __construct(
         MTB_Affiliate_Settings $settings,
         MTB_Affiliate_Amazon_Client $amazonClient,
         ?MTB_Affiliate_Badge_Resolver $badgeResolver = null,
-        ?MTB_Affiliate_Telegram_Handler $telegramHandler = null
+        ?MTB_Affiliate_Telegram_Handler $telegramHandler = null,
+        ?MTB_Affiliate_Product_Library $productLibrary = null
     ) {
         $this->settings         = $settings;
         $this->amazonClient     = $amazonClient;
         $this->badgeResolver    = $badgeResolver ?? new MTB_Affiliate_Badge_Resolver();
         $this->telegramHandler  = $telegramHandler;
+        $this->productLibrary   = $productLibrary;
     }
 
     public function register_routes(): void {
@@ -46,6 +49,24 @@ final class MTB_Affiliate_Rest_Controller {
             'callback'            => [$this, 'handle_telegram_webhook'],
             'permission_callback' => '__return_true',
         ]);
+
+        register_rest_route('mtb-affiliate-cards/v1', '/products', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_products'],
+            'permission_callback' => [$this, 'can_view_item'],
+            'args'                => [
+                'limit' => [
+                    'type'    => 'integer',
+                    'default' => 20,
+                ],
+            ],
+        ]);
+
+        register_rest_route('mtb-affiliate-cards/v1', '/products/last(?P<n>\d*)', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_product_last'],
+            'permission_callback' => [$this, 'can_view_item'],
+        ]);
     }
 
     public function can_view_item(): bool {
@@ -57,17 +78,14 @@ final class MTB_Affiliate_Rest_Controller {
     }
 
     public function handle_telegram_webhook($request): \WP_REST_Response {
-        // 1. Validate secret token (D-13) — BEFORE any business logic
         $settings       = $this->settings->get_all();
         $expectedSecret = $settings['telegram_webhook_secret'] ?? '';
         $receivedSecret = $request->get_header('x-telegram-bot-api-secret-token') ?? '';
 
         if ($expectedSecret === '' || $receivedSecret === '' || ! hash_equals($expectedSecret, $receivedSecret)) {
-            // Always 200 to Telegram — never 403, or Telegram deletes the webhook
             return new \WP_REST_Response(null, 200);
         }
 
-        // 2. Chat-ID filtering (D-14) — optional, silently ignore unauthorized
         $payload       = $request->get_json_params();
         $chatId        = (int) ($payload['message']['chat']['id'] ?? 0);
         $allowedChatId = (int) ($settings['telegram_chat_id'] ?? 0);
@@ -75,12 +93,36 @@ final class MTB_Affiliate_Rest_Controller {
             return new \WP_REST_Response(null, 200);
         }
 
-        // 3. Delegate to handler (D-15: always return 200)
         if ($this->telegramHandler !== null) {
             $this->telegramHandler->handle($payload);
         }
 
         return new \WP_REST_Response(null, 200);
+    }
+
+    public function get_products($request): \WP_REST_Response {
+        if ($this->productLibrary === null) {
+            return new \WP_REST_Response([], 200);
+        }
+        $limit = (int) ($request->get_param('limit') ?? 20);
+        $limit = max(1, min($limit, 100));
+        $products = $this->productLibrary->get_recent($limit);
+        return new \WP_REST_Response($products, 200);
+    }
+
+    public function get_product_last($request): \WP_REST_Response {
+        if ($this->productLibrary === null) {
+            return new \WP_REST_Response(null, 404);
+        }
+        $n = (int) ($request['n'] ?? 1);
+        if ($n < 1) {
+            $n = 1;
+        }
+        $product = $this->productLibrary->get_last($n);
+        if ($product === null) {
+            return new \WP_REST_Response(null, 404);
+        }
+        return new \WP_REST_Response($product, 200);
     }
 
     public function get_item($request) {

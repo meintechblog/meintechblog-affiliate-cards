@@ -28,6 +28,7 @@ require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-amazon-clie
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-block.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-tracking-registry.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-url-resolver.php';
+require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-product-library.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-telegram-handler.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-plugin.php';
 
