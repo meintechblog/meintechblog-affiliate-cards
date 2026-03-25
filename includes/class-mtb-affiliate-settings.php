@@ -14,6 +14,9 @@ final class MTB_Affiliate_Settings {
             'marketplace' => 'www.amazon.de',
             'client_id' => '',
             'client_secret' => '',
+            'telegram_bot_token'      => '',
+            'telegram_chat_id'        => '',
+            'telegram_webhook_secret' => '',
         ];
     }
 
@@ -71,6 +74,14 @@ final class MTB_Affiliate_Settings {
         $marketplace = trim((string) ($settings['marketplace'] ?? $defaults['marketplace']));
         $clientId = trim((string) ($settings['client_id'] ?? ''));
         $clientSecret = trim((string) ($settings['client_secret'] ?? ''));
+        $botToken      = trim((string) ($settings['telegram_bot_token'] ?? ''));
+        $chatId        = trim((string) ($settings['telegram_chat_id'] ?? ''));
+        $webhookSecret = trim((string) ($settings['telegram_webhook_secret'] ?? ''));
+
+        // Auto-generate webhook secret if empty (per D-12)
+        if ($webhookSecret === '') {
+            $webhookSecret = bin2hex(random_bytes(16));
+        }
 
         if (! in_array($badgeMode, ['auto', 'video', 'setup'], true)) {
             $badgeMode = $defaults['badge_mode'];
@@ -83,6 +94,9 @@ final class MTB_Affiliate_Settings {
             'marketplace' => $marketplace !== '' ? $marketplace : $defaults['marketplace'],
             'client_id' => $clientId,
             'client_secret' => $clientSecret,
+            'telegram_bot_token'      => $botToken,
+            'telegram_chat_id'        => $chatId,
+            'telegram_webhook_secret' => $webhookSecret,
         ];
     }
 }
