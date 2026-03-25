@@ -59,6 +59,10 @@ final class MTB_Affiliate_Rest_Controller {
                     'type'    => 'integer',
                     'default' => 20,
                 ],
+                'date_filter' => [
+                    'type'    => 'string',
+                    'default' => '',
+                ],
             ],
         ]);
 
@@ -104,6 +108,15 @@ final class MTB_Affiliate_Rest_Controller {
         if ($this->productLibrary === null) {
             return new \WP_REST_Response([], 200);
         }
+
+        $dateFilter = trim((string) ($request->get_param('date_filter') ?? ''));
+        if ($dateFilter === 'heute' || $dateFilter === 'today') {
+            return new \WP_REST_Response($this->productLibrary->get_products_today(), 200);
+        }
+        if ($dateFilter === 'gestern' || $dateFilter === 'yesterday') {
+            return new \WP_REST_Response($this->productLibrary->get_products_yesterday(), 200);
+        }
+
         $limit = (int) ($request->get_param('limit') ?? 20);
         $limit = max(1, min($limit, 100));
         $products = $this->productLibrary->get_recent($limit);

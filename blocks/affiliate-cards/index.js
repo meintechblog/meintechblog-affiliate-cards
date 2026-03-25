@@ -12,7 +12,9 @@
     const SelectControl = components.SelectControl;
     const Button = components.Button;
     const TOKEN_PATTERN = /^amazon:([A-Z0-9]{10})$/;
+    const SHORTHAND_PATTERN = /^amazon:(last|heute|today|gestern|yesterday)$/i;
     const HYDRATION_ENDPOINT = 'mtb-affiliate-cards/v1/item';
+    const PRODUCTS_ENDPOINT = 'mtb-affiliate-cards/v1/products';
     const BADGE_OPTIONS = [
         { label: 'Automatisch', value: 'auto' },
         { label: 'Im Video verwendet', value: 'video' },
@@ -30,6 +32,20 @@
     function extractAmazonToken( content ) {
         const match = normalizeParagraphContent( content ).match( TOKEN_PATTERN );
         return match ? match[ 1 ] : null;
+    }
+
+    function extractShorthandToken( content ) {
+        const match = normalizeParagraphContent( content ).match( SHORTHAND_PATTERN );
+        return match ? match[ 1 ].toLowerCase() : null;
+    }
+
+    function buildProductsUrl( keyword ) {
+        const root = ( window.wpApiSettings && window.wpApiSettings.root ) ? window.wpApiSettings.root : '/wp-json/';
+        const trimmedRoot = root.replace( /\/+$/, '' );
+        if ( keyword === 'last' ) {
+            return trimmedRoot + '/' + PRODUCTS_ENDPOINT + '/last';
+        }
+        return trimmedRoot + '/' + PRODUCTS_ENDPOINT + '?date_filter=' + encodeURIComponent( keyword );
     }
 
     function flattenBlocks( blockList ) {
@@ -232,6 +248,82 @@
 
                 const allBlocks = flattenBlocks( editorSelect.getBlocks() );
                 const selectedClientId = editorSelect.getSelectedBlockClientId();
+
+                /* --- Shorthand tokens: amazon:last, amazon:heute, amazon:gestern --- */
+                const shorthandBlock = allBlocks.find( function ( block ) {
+                    return (
+                        block &&
+                        block.name === 'core/paragraph' &&
+                        block.clientId !== selectedClientId &&
+                        extractShorthandToken( block.attributes && block.attributes.content )
+                    );
+                } );
+
+                if ( shorthandBlock ) {
+                    var keyword = extractShorthandToken( shorthandBlock.attributes && shorthandBlock.attributes.content );
+                    if ( ! keyword ) { return; }
+
+                    isHandlingTokenReplacement = true;
+
+                    var fetchUrl = buildProductsUrl( keyword );
+                    var nonce = ( window.wpApiSettings && window.wpApiSettings.nonce ) || '';
+
+                    fetch( fetchUrl, { headers: { 'X-WP-Nonce': nonce } } )
+                        .then( function ( resp ) { return resp.json(); } )
+                        .then( function ( data ) {
+                            var products = keyword === 'last' ? ( data && data.asin ? [ data ] : [] ) : ( Array.isArray( data ) ? data : [] );
+
+                            if ( products.length === 0 ) {
+                                editorDispatch.removeBlocks( [ shorthandBlock.clientId ], false );
+                                if ( window.wp.data.dispatch( 'core/notices' ) ) {
+                                    window.wp.data.dispatch( 'core/notices' ).createNotice(
+                                        'info',
+                                        'Keine Produkte gefunden fuer amazon:' + keyword,
+                                        { type: 'snackbar', isDismissible: true }
+                                    );
+                                }
+                                return;
+                            }
+
+                            var postId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
+                            var newBlocks = products.map( function ( product ) {
+                                var productAsin = String( product.asin || '' ).toUpperCase();
+                                return createBlock( 'meintechblog/affiliate-cards', {
+                                    items: [ { asin: productAsin } ],
+                                    badgeMode: 'auto',
+                                    ctaLabel: 'Preis auf Amazon checken',
+                                    autoShortenTitles: true,
+                                    loadState: 'loading',
+                                    loadError: ''
+                                } );
+                            } );
+
+                            editorDispatch.replaceBlocks( shorthandBlock.clientId, newBlocks );
+
+                            newBlocks.forEach( function ( block, index ) {
+                                var productAsin = String( products[ index ].asin || '' ).toUpperCase();
+                                hydrateAffiliateBlock(
+                                    editorSelect,
+                                    editorDispatch,
+                                    block.clientId,
+                                    productAsin,
+                                    postId
+                                );
+                            } );
+                        } )
+                        .catch( function () {
+                            editorDispatch.removeBlocks( [ shorthandBlock.clientId ], false );
+                        } )
+                        .finally( function () {
+                            window.setTimeout( function () {
+                                isHandlingTokenReplacement = false;
+                            }, 0 );
+                        } );
+
+                    return;
+                }
+
+                /* --- Standard ASIN tokens: amazon:B0XXXXXXXX --- */
                 const tokenBlock = allBlocks.find( function ( block ) {
                     return (
                         block &&
