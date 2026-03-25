@@ -353,59 +353,108 @@
                     return;
                 }
 
-                /* --- Inline tokens: amazon:ASIN within text → affiliate link --- */
+                /* --- Inline tokens: amazon:ASIN or amazon:last/heute/gestern within text → affiliate link --- */
                 /* Triggers on Enter (deselected paragraph with mixed content) */
+                var INLINE_ASIN_RE = /amazon:([A-Z0-9]{10})/i;
+                var INLINE_SHORTHAND_RE = /amazon:(last|heute|today|gestern|yesterday)/i;
                 for ( var ii = 0; ii < allBlocks.length; ii++ ) {
                     var iBlock = allBlocks[ ii ];
                     if ( ! iBlock || iBlock.name !== 'core/paragraph' || iBlock.clientId === selectedClientId ) { continue; }
                     var iNorm = normalizeParagraphContent( iBlock.attributes && iBlock.attributes.content );
                     /* Skip standalone tokens (handled by other sections) */
                     if ( TOKEN_PATTERN.test( iNorm ) || SHORTHAND_PATTERN.test( iNorm ) ) { continue; }
-                    /* Must contain amazon:ASIN as part of larger text */
-                    var iMatch = iNorm.match( /amazon:([A-Z0-9]{10})/i );
-                    if ( ! iMatch ) { continue; }
                     /* Skip already-processed paragraphs */
                     var iRawStr = String( iBlock.attributes && iBlock.attributes.content || '' );
                     if ( iRawStr.indexOf( 'Affiliate-Link' ) !== -1 ) { continue; }
+                    /* Match inline ASIN or shorthand token */
+                    var iAsinMatch = iNorm.match( INLINE_ASIN_RE );
+                    var iShortMatch = iNorm.match( INLINE_SHORTHAND_RE );
+                    if ( ! iAsinMatch && ! iShortMatch ) { continue; }
 
                     isHandlingTokenReplacement = true;
-                    var inlineAsin = iMatch[ 1 ].toUpperCase();
                     var inlineClientId = iBlock.clientId;
 
-                    showNotice( 'Inline-Link: amazon:' + inlineAsin + ' wird aufgeloest...', 'info' );
+                    if ( iAsinMatch ) {
+                        /* --- Inline ASIN: fetch product data and replace with link --- */
+                        var inlineAsin = iAsinMatch[ 1 ].toUpperCase();
+                        showNotice( 'Inline-Link: amazon:' + inlineAsin + ' wird aufgeloest...', 'info' );
 
-                    ( function ( capturedAsin, capturedClientId ) {
-                        var postId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
-                        var hUrl = buildHydrationUrl( capturedAsin, postId );
-                        var hHeaders = {};
-                        if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
-                            hHeaders[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
-                        }
+                        ( function ( capturedAsin, capturedClientId ) {
+                            var postId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
+                            var hUrl = buildHydrationUrl( capturedAsin, postId );
+                            var hHeaders = {};
+                            if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+                                hHeaders[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+                            }
+                            fetch( hUrl, { credentials: 'same-origin', headers: hHeaders } )
+                                .then( function ( resp ) {
+                                    if ( ! resp.ok ) { throw new Error( 'HTTP ' + resp.status ); }
+                                    return resp.json();
+                                } )
+                                .then( function ( payload ) {
+                                    var title = payload && payload.title ? payload.title : capturedAsin;
+                                    var detailUrl = payload && payload.detailUrl ? payload.detailUrl : 'https://www.amazon.de/dp/' + capturedAsin;
+                                    if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
+                                    var linkHtml = '<a href="' + detailUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
+                                    var liveBlock = editorSelect.getBlock( capturedClientId );
+                                    if ( ! liveBlock ) { return; }
+                                    var currentContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
+                                    var newContent = currentContent.replace( /amazon:[A-Za-z0-9]{10}/i, linkHtml );
+                                    editorDispatch.updateBlockAttributes( capturedClientId, { content: newContent } );
+                                    showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
+                                } )
+                                .catch( function ( err ) {
+                                    showNotice( 'Inline-Link Fehler: ' + ( err && err.message || 'Unbekannt' ), 'error' );
+                                } )
+                                .finally( function () {
+                                    window.setTimeout( function () { isHandlingTokenReplacement = false; }, 0 );
+                                } );
+                        } )( inlineAsin, inlineClientId );
+                    } else {
+                        /* --- Inline shorthand: amazon:last/heute/gestern → resolve product then link --- */
+                        var inlineKeyword = iShortMatch[ 1 ].toLowerCase();
+                        var inlineTokenFull = iShortMatch[ 0 ];
+                        showNotice( 'Inline-Link: ' + inlineTokenFull + ' wird aufgeloest...', 'info' );
 
-                        fetch( hUrl, { credentials: 'same-origin', headers: hHeaders } )
-                            .then( function ( resp ) {
-                                if ( ! resp.ok ) { throw new Error( 'HTTP ' + resp.status ); }
-                                return resp.json();
-                            } )
-                            .then( function ( payload ) {
-                                var title = payload && payload.title ? payload.title : capturedAsin;
-                                var detailUrl = payload && payload.detailUrl ? payload.detailUrl : 'https://www.amazon.de/dp/' + capturedAsin;
-                                if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
-                                var linkHtml = '<a href="' + detailUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
-                                var liveBlock = editorSelect.getBlock( capturedClientId );
-                                if ( ! liveBlock ) { return; }
-                                var currentContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
-                                var newContent = currentContent.replace( /amazon:[A-Za-z0-9]{10}/i, linkHtml );
-                                editorDispatch.updateBlockAttributes( capturedClientId, { content: newContent } );
-                                showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
-                            } )
-                            .catch( function ( err ) {
-                                showNotice( 'Inline-Link Fehler: ' + ( err && err.message || 'Unbekannt' ), 'error' );
-                            } )
-                            .finally( function () {
-                                window.setTimeout( function () { isHandlingTokenReplacement = false; }, 0 );
-                            } );
-                    } )( inlineAsin, inlineClientId );
+                        ( function ( capturedKeyword, capturedToken, capturedClientId ) {
+                            var pUrl = buildProductsUrl( capturedKeyword );
+                            var pHeaders = {};
+                            if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+                                pHeaders[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+                            }
+                            fetch( pUrl, { credentials: 'same-origin', headers: pHeaders } )
+                                .then( function ( resp ) {
+                                    if ( ! resp.ok ) { throw new Error( 'HTTP ' + resp.status ); }
+                                    return resp.json();
+                                } )
+                                .then( function ( data ) {
+                                    var product = capturedKeyword === 'last'
+                                        ? ( data && data.asin ? data : null )
+                                        : ( Array.isArray( data ) && data.length > 0 ? data[ 0 ] : null );
+                                    if ( ! product ) {
+                                        showNotice( 'Kein Produkt gefunden fuer ' + capturedToken, 'warning' );
+                                        return;
+                                    }
+                                    var asin = String( product.asin || '' ).toUpperCase();
+                                    var title = product.title && product.title !== asin ? product.title : asin;
+                                    var detailUrl = product.detail_url || 'https://www.amazon.de/dp/' + asin;
+                                    if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
+                                    var linkHtml = '<a href="' + detailUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
+                                    var liveBlock = editorSelect.getBlock( capturedClientId );
+                                    if ( ! liveBlock ) { return; }
+                                    var currentContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
+                                    var newContent = currentContent.replace( /amazon:(last|heute|today|gestern|yesterday)/i, linkHtml );
+                                    editorDispatch.updateBlockAttributes( capturedClientId, { content: newContent } );
+                                    showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
+                                } )
+                                .catch( function ( err ) {
+                                    showNotice( 'Inline-Link Fehler: ' + ( err && err.message || 'Unbekannt' ), 'error' );
+                                } )
+                                .finally( function () {
+                                    window.setTimeout( function () { isHandlingTokenReplacement = false; }, 0 );
+                                } );
+                        } )( inlineKeyword, inlineTokenFull, inlineClientId );
+                    }
                     return;
                 }
 
