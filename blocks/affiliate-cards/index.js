@@ -502,6 +502,23 @@
                             updateItem( 'asin', value.trim().toUpperCase() );
                         }
                     } ),
+                    products.length > 0 && el( SelectControl, {
+                        label: i18n.__( 'Aus Bibliothek wählen', 'meintechblog-affiliate-cards' ),
+                        value: '',
+                        options: [ { label: '— Produkt auswählen —', value: '' } ].concat(
+                            products.map( function ( p ) {
+                                return {
+                                    label: ( p.title || p.asin ) + ' (' + p.asin + ')',
+                                    value: p.asin
+                                };
+                            } )
+                        ),
+                        onChange: function ( value ) {
+                            if ( value ) {
+                                updateItem( 'asin', value.trim().toUpperCase() );
+                            }
+                        }
+                    } ),
                     el( SelectControl, {
                         label: i18n.__( 'Badge-Modus', 'meintechblog-affiliate-cards' ),
                         value: attributes.badgeMode || 'auto',
