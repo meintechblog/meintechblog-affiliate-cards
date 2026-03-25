@@ -1,0 +1,240 @@
+[
+    {
+        "id": "5e778312194bf864",
+        "type": "tab",
+        "label": "Amazon Affiliate Bot",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "82a01a9fce700925",
+        "type": "inject",
+        "z": "5e778312194bf864",
+        "name": "Set Default Tracking-ID",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "meintechblog-251007-21",
+        "payloadType": "str",
+        "x": 210,
+        "y": 160,
+        "wires": [
+            [
+                "d90a8a35e6680662"
+            ]
+        ]
+    },
+    {
+        "id": "d90a8a35e6680662",
+        "type": "function",
+        "z": "5e778312194bf864",
+        "name": "defaultTrackingId → global",
+        "func": "global.set(\"defaultTrackingId\", msg.payload);\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 480,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "98d5934e821e91dc",
+        "type": "telegram receiver",
+        "z": "5e778312194bf864",
+        "name": "meintechblog_bot",
+        "bot": "f99b4ffee265c739",
+        "saveDataDir": "",
+        "filterCommands": false,
+        "x": 170,
+        "y": 250,
+        "wires": [
+            [
+                "afb7be788b65b3c3",
+                "d4da4feac32ba16b"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "afb7be788b65b3c3",
+        "type": "function",
+        "z": "5e778312194bf864",
+        "name": "ShortURL Detector",
+        "func": "let p = msg.payload || {};\nlet raw = (p.content || \"\").trim();\n\n// In gemischtem Text NUR die URL extrahieren\n// Matcht amzn.to UND amzn.eu in JEDEM Kontext\nconst urlMatch = raw.match(/https?:\\/\\/amzn\\.(to|eu)\\/[^\\s]+/i);\n\nmsg.telegram = p;\nmsg.originalInput = raw;\n\nif (urlMatch) {\n    // Extrahierte Short-URL\n    msg.needsResolve = true;\n    msg.url = urlMatch[0];\n    return msg;\n}\n\n// Kein Shortlink gefunden\nmsg.needsResolve = false;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 250,
+        "wires": [
+            [
+                "14347e9564a7ad65"
+            ]
+        ]
+    },
+    {
+        "id": "14347e9564a7ad65",
+        "type": "switch",
+        "z": "5e778312194bf864",
+        "name": "ShortURL?",
+        "property": "needsResolve",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "false"
+            }
+        ],
+        "checkall": "true",
+        "outputs": 2,
+        "x": 660,
+        "y": 250,
+        "wires": [
+            [
+                "5c56612cb0630558"
+            ],
+            [
+                "599064327caa1676"
+            ]
+        ]
+    },
+    {
+        "id": "5c56612cb0630558",
+        "type": "http request",
+        "z": "5e778312194bf864",
+        "name": "Resolve ShortURL (GET, follow redirects)",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 980,
+        "y": 210,
+        "wires": [
+            [
+                "6a28d596b636debd"
+            ]
+        ]
+    },
+    {
+        "id": "6a28d596b636debd",
+        "type": "function",
+        "z": "5e778312194bf864",
+        "name": "ShortURL Resolver",
+        "func": "const telegram = msg.telegram || {};\nconst chatId = telegram.chatId;\n\nlet finalUrl = null;\n\n// Wenn Redirects gefolgt wurden → finale URL hier\nif (msg.responseUrl) {\n    finalUrl = msg.responseUrl;\n}\n\n// Fallback: Falls doch nur Location gesetzt wurde (sollte bei followRedirects=true selten sein)\nif (!finalUrl && msg.headers && msg.headers.location) {\n    finalUrl = msg.headers.location;\n}\n\nif (!finalUrl) {\n    msg.payload = {\n        chatId,\n        type: \"message\",\n        content: \"Fehler beim Auflösen des Shortlinks.\"\n    };\n    return msg;\n}\n\nmsg.payload = {\n    chatId,\n    content: finalUrl\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1240,
+        "y": 210,
+        "wires": [
+            [
+                "599064327caa1676"
+            ]
+        ]
+    },
+    {
+        "id": "599064327caa1676",
+        "type": "function",
+        "z": "5e778312194bf864",
+        "name": "meintechblog-affiliate",
+        "func": "// Nur Nachrichten dieser Chat-ID\nconst allowedChatId = 297934858;\n\nlet p = msg.payload;\nif (typeof p === \"string\") {\n    try { p = JSON.parse(p); } catch (e) { return null; }\n}\nif (!p || p.chatId !== allowedChatId) return null;\n\n// --- INPUT robust machen (Telegram/Markdown-Wrapper entfernen) ---\nlet input = (p.content || \"\").trim();\ninput = input\n    .replace(/^<(.+)>$/, \"$1\")   // <https://...>\n    .replace(/^\\((.+)\\)$/, \"$1\") // (https://...)\n    .replace(/^\\[(.+)\\]$/, \"$1\");// [https://...]\n\n// Default-Tracking-ID aus globalem Kontext (Inject-Node)\nlet defaultTracking = global.get(\"defaultTrackingId\") || \"meintechblog-251007-21\";\nlet trackingId = context.get(\"trackingId\") || defaultTracking;\nlet lastAsin = context.get(\"lastAsin\") || null;\n\nfunction buildUrl(asin, tracking) {\n    return `https://www.amazon.de/dp/${asin}?tag=${tracking}`;\n}\n\nfunction isValidDate(day, month, yearStr) {\n    let year = yearStr.length === 4 ? parseInt(yearStr, 10) : 2000 + parseInt(yearStr, 10);\n    const d = new Date(year, month - 1, day);\n    return d.getFullYear() === year && d.getMonth() === (month - 1) && d.getDate() === day;\n}\n\nfunction extractAsin(url) {\n    // deckt u.a. ab:\n    // /dp/ASIN, /gp/product/ASIN, /product/ASIN, /exec/obidos/ASIN/ASIN\n    const regex = /\\/(?:dp|gp\\/product|product|exec\\/obidos\\/ASIN)\\/(B0[A-Z0-9]{8})\\b/i;\n    const match = url.match(regex);\n    return match ? match[1].toUpperCase() : null;\n}\n\n// RESET\nif (input.toLowerCase() === \"reset\") {\n    trackingId = defaultTracking;\n    context.set(\"trackingId\", trackingId);\n\n    if (!lastAsin) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: `OK — Tracking-ID zurückgesetzt: ${trackingId}`\n            }\n        };\n    }\n\n    return {\n        payload: {\n            chatId: allowedChatId,\n            type: \"message\",\n            content: `OK — Tracking-ID zurückgesetzt: ${trackingId}\\n\\n${buildUrl(lastAsin, trackingId)}`\n        }\n    };\n}\n\n// ---------- HEUTE ----------\nif (input.toLowerCase() === \"heute\") {\n    // aktuelles Datum ermitteln\n    let d = new Date();\n    let yy = String(d.getFullYear()).slice(2);       // z.B. \"25\"\n    let mm = String(d.getMonth() + 1).padStart(2, \"0\");\n    let dd = String(d.getDate()).padStart(2, \"0\");\n\n    let todayTS = `${yy}${mm}${dd}`;  // z.B. \"250221\"\n\n    trackingId = `meintechblog-${todayTS}-21`;\n    context.set(\"trackingId\", trackingId);\n\n    // Wenn noch keine ASIN gespeichert → nur OK\n    if (!lastAsin) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: `OK — Tracking-ID gesetzt: ${trackingId}`\n            }\n        };\n    }\n\n    // Wenn ASIN vorhanden → fertige URL sofort ausgeben\n    return {\n        payload: {\n            chatId: allowedChatId,\n            type: \"message\",\n            content: buildUrl(lastAsin, trackingId)\n        }\n    };\n}\n\n// TIMESTAMP YYMMDD\nif (/^[0-9]{6}$/.test(input)) {\n    const yy = input.slice(0, 2);\n    const mm = input.slice(2, 4);\n    const dd = input.slice(4, 6);\n\n    if (!isValidDate(parseInt(dd, 10), parseInt(mm, 10), yy)) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: `Ungültiges Datum im Format YYMMDD: ${input}`\n            }\n        };\n    }\n\n    trackingId = `meintechblog-${input}-21`;\n    context.set(\"trackingId\", trackingId);\n\n    if (!lastAsin) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: `OK — neue Tracking-ID gesetzt: ${trackingId}`\n            }\n        };\n    }\n\n    return {\n        payload: {\n            chatId: allowedChatId,\n            type: \"message\",\n            content: buildUrl(lastAsin, trackingId)\n        }\n    };\n}\n\n// ---------- DATUM: D.M.YY / DD.MM.YY / D.M.YYYY / DD.MM.YYYY ----------\nconst dateMatch = input.match(/^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{2}|\\d{4})$/);\n\nif (dateMatch) {\n    const day = parseInt(dateMatch[1], 10);\n    const month = parseInt(dateMatch[2], 10);\n    const yearPart = dateMatch[3];\n\n    // gültiges Datum prüfen\n    if (!isValidDate(day, month, yearPart)) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: `Ungültiges Datum: ${input}`\n            }\n        };\n    }\n\n    // Jahr 4-stellig → auf 2-stellig reduzieren\n    const year2 = yearPart.length === 4 ? yearPart.slice(2) : yearPart;\n\n    // Timestamp bauen YYMMDD\n    const ts =\n        `${year2}` +\n        `${String(month).padStart(2, \"0\")}` +\n        `${String(day).padStart(2, \"0\")}`;\n\n    trackingId = `meintechblog-${ts}-21`;\n    context.set(\"trackingId\", trackingId);\n\n    if (!lastAsin) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: `OK — neue Tracking-ID gesetzt: ${trackingId}`\n            }\n        };\n    }\n\n    return {\n        payload: {\n            chatId: allowedChatId,\n            type: \"message\",\n            content: buildUrl(lastAsin, trackingId)\n        }\n    };\n}\n\n// Amazon-URL (amazon.* oder amzn.* – falls direkt Produkt-URL / Shortlink)\nif (/^(https?:\\/\\/)?(www\\.)?(amazon\\.[a-z.]+|amzn\\.(to|eu))\\//i.test(input)) {\n    const asin = extractAsin(input);\n\n    if (!asin) {\n        return {\n            payload: {\n                chatId: allowedChatId,\n                type: \"message\",\n                content: \"Konnte keine ASIN aus der URL extrahieren.\"\n            }\n        };\n    }\n\n    context.set(\"lastAsin\", asin);\n\n    return {\n        payload: {\n            chatId: allowedChatId,\n            type: \"message\",\n            content: buildUrl(asin, trackingId)\n        }\n    };\n}\n\n// Direkte ASIN\nif (/^B0[A-Z0-9]{8}$/i.test(input)) {\n    const asin = input.toUpperCase();\n    context.set(\"lastAsin\", asin);\n\n    return {\n        payload: {\n            chatId: allowedChatId,\n            type: \"message\",\n            content: buildUrl(asin, trackingId)\n        }\n    };\n}\n\n// Fallback\nreturn {\n    payload: {\n        chatId: allowedChatId,\n        type: \"message\",\n        content:\n            `Unbekanntes Format.\n\nGültige Eingaben:\n• ASIN (B0XXXXXXXX)\n• Amazon-URL\n• Shortlink (amzn.to / amzn.eu)\n• Datum YYMMDD\n• Datum DD.MM.YY / DD.MM.YYYY\n• heute\n• reset`\n    }\n};",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 490,
+        "y": 440,
+        "wires": [
+            [
+                "72714ce2df5262e4"
+            ]
+        ]
+    },
+    {
+        "id": "72714ce2df5262e4",
+        "type": "telegram sender",
+        "z": "5e778312194bf864",
+        "name": "meintechblog_bot",
+        "bot": "f99b4ffee265c739",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 850,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b2c2185864a3f07d",
+        "type": "comment",
+        "z": "5e778312194bf864",
+        "name": "Amazon Affiliate Bot – Node-RED Dokumentation",
+        "info": "Übersicht\nDieser Flow verarbeitet Nachrichten eines Telegram-Bots und generiert automatisch Amazon-Affiliate-Links anhand von eingegebenen ASINs, Amazon-URLs oder Shortlinks (amzn.to / amzn.eu).\nZusätzlich können Tracking-IDs über Datumsangaben automatisch gesetzt werden.\n\nDer Flow unterstützt folgende Features:\n- Extraktion von ASIN aus:\n  • Amazon-Produktlinks\n  • Amazon-Shortlinks (amzn.to / amzn.eu)\n  • iPhone-Share-Links mit zusätzlichem Text\n- Automatische Auflösung von Shortlinks per HTTP-GET (followRedirects=true)\n- Verwaltung einer Tracking-ID\n- Datumsverarbeitung:\n  • YYMMDD\n  • D.M.YY / DD.MM.YY / D.M.YYYY / DD.MM.YYYY (auch 1-stellige Tage/Monate)\n  • „heute“\n- Reset-Funktion\n- Inject-Node zur einfachen Änderung der Default-Tracking-ID\n\n------------------------------------------------------------\n\nFlow-Architektur\nTelegram IN\n→ ShortURL Detector\n→ Switch (ShortURL?)\n   • TRUE → Resolve ShortURL → ShortURL Resolver\n   • FALSE → direkt zu main-affiliate\n→ Telegram OUT\n\nZusätzlich:\nInject „Default Tracking-ID setzen“ → global.defaultTrackingId\n\n------------------------------------------------------------\n\n1. ShortURL Detector\nErkennt Shortlinks in jeder Nachricht – auch wenn sie in Text vergraben sind (iPhone-Share).\n\nErkennung:\n- https://amzn.to/…\n- https://amzn.eu/… (inkl. /d/... Varianten)\n\nExtrahiert die eigentliche URL mittels Regex aus beliebigem Text und setzt:\nmsg.needsResolve = true\nmsg.url = <extrahierte URL>\n\nWenn kein Shortlink gefunden:\nmsg.needsResolve = false\n\n------------------------------------------------------------\n\n2. ShortURL Resolver\nVerwendet HTTP-GET mit followRedirects=true.\nDie finale Ziel-URL steht in:\nmsg.responseUrl\n\nFallback:\nmsg.headers.location\n\nDas Ergebnis wird als reguläre Amazon-URL weitergegeben.\n\n------------------------------------------------------------\n\n3. Haupt-Logik (main-affiliate)\nZentrale Verarbeitung aller Eingaben. Unterstützt folgende Eingaben:\n\nA) Direkte ASIN\nBeispiel:\nB0ABC12345\n→ wird gespeichert und sofort als Affiliate-URL ausgegeben\n\nB) Produkt-URL\nUnterstützt:\n- https://amazon.de/dp/B0…\n- https://amazon.com/gp/product/B0…\n- über Shortlink aufgelöste URLs\nExtrahiert ASIN automatisch.\n\nC) Shortlinks\nNach dem Resolver immer eine valide Amazon-URL mit ASIN.\n\nD) Datum als YYMMDD\nBeispiel:\n250101\n\nE) Datum in flexiblen Formaten:\n2.6.25\n02.6.25\n2.06.25\n02.06.2025\n2.6.2025\n→ akzeptiert 1- und 2-stellige Angaben\n\nF) „heute“\nAutomatische Ermittlung des Tagesdatums → Erzeugung YYMMDD\nTracking-ID wird gesetzt:\nmeintechblog-YYMMDD-21\nFalls ASIN vorhanden → sofort Affiliate-Link ausgeben.\n\nG) „reset“\nTracking-ID zurück auf Default (global.defaultTrackingId)\nFalls ASIN vorhanden → Link sofort ausgeben\nFalls nicht → nur Bestätigungstext\n\n------------------------------------------------------------\n\n4. Default-Tracking-ID (Inject-Node)\nEin Inject-Node schreibt beim Deploy und bei manueller Ausführung:\nglobal.defaultTrackingId = \"<deine-ID>\"\n\nHaupt-Node nutzt:\n- die gespeicherte trackingId (falls gesetzt)\n- sonst defaultTrackingId\n- „reset“ setzt zurück auf defaultTrackingId\n\n------------------------------------------------------------\n\n5. Kontextvariablen\ncontext.trackingId\n→ aktuell aktive Tracking-ID\n\ncontext.lastAsin\n→ zuletzt erkannte ASIN\n\nglobal.defaultTrackingId\n→ Default-Wert aus Inject-Node\n\n------------------------------------------------------------\n\n6. Unterstützte Eingaben (Beispiele)\n\n„B0ABC12345“\n→ ASIN verarbeiten\n\n„https://amazon.de/dp/B0ABC12345“\n→ ASIN extrahieren\n\n„https://amzn.to/abc123“\n→ Shortlink wird aufgelöst\n\n„https://amzn.eu/d/aD7sf0g“\n→ Shortlink wird aufgelöst (inkl. iPhone-Share)\n\n„250101“\n→ Datum im Format YYMMDD → Tracking-ID setzen\n\n„2.6.25“, „02.06.2025“, „2.6.2025“\n→ flexible Datumserkennung\n\n„heute“\n→ Tracking-ID = aktuelles Datum\n\n„reset“\n→ Tracking-ID auf Default zurücksetzen\n\n------------------------------------------------------------\n\n7. Fehlerfälle / Validierung\nDer Bot gibt klare Fehlermeldungen bei:\n- ungültigen Daten\n- fehlender ASIN\n- URL ohne ASIN\n- Shortlink nicht auflösbar\n- nicht unterstützten Formaten\n\n------------------------------------------------------------\n\n8. Beispielablauf\n\nInput:\nheute\n→ Tracking-ID wird erstellt (YYMMDD)\n→ ggf. Link per ASIN sofort ausgegeben\n\nInput:\nhttps://amzn.eu/d/aD7sf0g\n→ Shortlink wird aufgelöst\n→ ASIN extrahiert\n→ Affiliate-Link ausgegeben",
+        "x": 280,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "d4da4feac32ba16b",
+        "type": "debug",
+        "z": "5e778312194bf864",
+        "name": "debug 28",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 400,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "f99b4ffee265c739",
+        "type": "telegram bot",
+        "botname": "meintechblog_bot",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "testenvironment": false,
+        "updatemode": "polling",
+        "pollinterval": "300",
+        "usesocks": false,
+        "sockshost": "",
+        "socksprotocol": "socks5",
+        "socksport": "6667",
+        "socksusername": "anonymous",
+        "sockspassword": "",
+        "bothost": "",
+        "botpath": "",
+        "localbothost": "0.0.0.0",
+        "localbotport": "8443",
+        "publicbotport": "8443",
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
+    }
+]

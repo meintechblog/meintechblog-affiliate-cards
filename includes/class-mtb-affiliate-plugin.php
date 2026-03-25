@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/class-mtb-affiliate-rest-controller.php';
+require_once __DIR__ . '/class-mtb-affiliate-token-prepass.php';
 
 final class MTB_Affiliate_Plugin {
     private static ?MTB_Affiliate_Plugin $instance = null;
@@ -464,6 +465,22 @@ final class MTB_Affiliate_Plugin {
 
         $postContent = (string) $post->post_content;
         if (stripos($postContent, 'amazon:') === false) {
+            return;
+        }
+
+        // --- Token pre-pass: resolve shorthand tokens to ASINs ---
+        $prepass     = new MTB_Affiliate_Token_Prepass($this->productLibrary);
+        $postContent = $prepass->resolve($postContent);
+
+        // If pre-pass consumed all tokens and no amazon: markers remain, bail early.
+        if (stripos($postContent, 'amazon:') === false) {
+            // Pre-pass resolved tokens but no ASINs were produced (e.g. no products in library).
+            // Still update the post to remove the dead tokens.
+            if ($postContent !== (string) $post->post_content) {
+                remove_action('save_post', [$this, 'handle_save_post'], 20);
+                wp_update_post(['ID' => $postId, 'post_content' => $postContent]);
+                add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+            }
             return;
         }
 
