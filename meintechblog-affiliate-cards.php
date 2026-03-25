@@ -26,6 +26,7 @@ require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-post-proces
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-audit-service.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-amazon-client.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-block.php';
+require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-product-library.php';
 require_once MTB_AFFILIATE_CARDS_DIR . 'includes/class-mtb-affiliate-plugin.php';
 
 if (function_exists('register_activation_hook')) {

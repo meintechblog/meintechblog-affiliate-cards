@@ -6,15 +6,18 @@ final class MTB_Affiliate_Rest_Controller {
     private MTB_Affiliate_Settings $settings;
     private MTB_Affiliate_Amazon_Client $amazonClient;
     private MTB_Affiliate_Badge_Resolver $badgeResolver;
+    private ?MTB_Affiliate_Product_Library $productLibrary;
 
     public function __construct(
         MTB_Affiliate_Settings $settings,
         MTB_Affiliate_Amazon_Client $amazonClient,
-        ?MTB_Affiliate_Badge_Resolver $badgeResolver = null
+        ?MTB_Affiliate_Badge_Resolver $badgeResolver = null,
+        ?MTB_Affiliate_Product_Library $productLibrary = null
     ) {
         $this->settings = $settings;
         $this->amazonClient = $amazonClient;
         $this->badgeResolver = $badgeResolver ?? new MTB_Affiliate_Badge_Resolver();
+        $this->productLibrary = $productLibrary;
     }
 
     public function register_routes(): void {
@@ -37,6 +40,24 @@ final class MTB_Affiliate_Rest_Controller {
                 ],
             ],
         ]);
+
+        register_rest_route('mtb-affiliate-cards/v1', '/products', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_products'],
+            'permission_callback' => [$this, 'can_view_item'],
+            'args'                => [
+                'limit' => [
+                    'type'    => 'integer',
+                    'default' => 20,
+                ],
+            ],
+        ]);
+
+        register_rest_route('mtb-affiliate-cards/v1', '/products/last(?P<n>\d*)', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_product_last'],
+            'permission_callback' => [$this, 'can_view_item'],
+        ]);
     }
 
     public function can_view_item(): bool {
@@ -45,6 +66,31 @@ final class MTB_Affiliate_Rest_Controller {
         }
 
         return (bool) current_user_can('edit_posts');
+    }
+
+    public function get_products($request): \WP_REST_Response {
+        if ($this->productLibrary === null) {
+            return new \WP_REST_Response([], 200);
+        }
+        $limit = (int) ($request->get_param('limit') ?? 20);
+        $limit = max(1, min($limit, 100));
+        $products = $this->productLibrary->get_recent($limit);
+        return new \WP_REST_Response($products, 200);
+    }
+
+    public function get_product_last($request): \WP_REST_Response {
+        if ($this->productLibrary === null) {
+            return new \WP_REST_Response(null, 404);
+        }
+        $n = (int) ($request['n'] ?? 1);
+        if ($n < 1) {
+            $n = 1;
+        }
+        $product = $this->productLibrary->get_last($n);
+        if ($product === null) {
+            return new \WP_REST_Response(null, 404);
+        }
+        return new \WP_REST_Response($product, 200);
     }
 
     public function get_item($request) {

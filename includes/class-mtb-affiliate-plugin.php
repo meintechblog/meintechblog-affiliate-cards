@@ -11,14 +11,16 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Block $block;
     private MTB_Affiliate_Audit_Service $auditService;
     private MTB_Affiliate_Amazon_Client $amazonClient;
+    private MTB_Affiliate_Product_Library $productLibrary;
     private MTB_Affiliate_Rest_Controller $restController;
 
     private function __construct() {
         $this->settings = new MTB_Affiliate_Settings();
         $this->auditService = new MTB_Affiliate_Audit_Service();
         $this->amazonClient = new MTB_Affiliate_Amazon_Client();
+        $this->productLibrary = new MTB_Affiliate_Product_Library();
         $this->block = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
-        $this->restController = new MTB_Affiliate_Rest_Controller($this->settings, $this->amazonClient);
+        $this->restController = new MTB_Affiliate_Rest_Controller($this->settings, $this->amazonClient, null, $this->productLibrary);
     }
 
     public static function instance(): MTB_Affiliate_Plugin {
@@ -46,6 +48,7 @@ final class MTB_Affiliate_Plugin {
     public static function activate(): void {
         $settings = new MTB_Affiliate_Settings();
         $settings->save($settings->defaults());
+        MTB_Affiliate_Product_Library::create_table();
     }
 
     public function register_settings(): void {
