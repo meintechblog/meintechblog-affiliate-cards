@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/class-mtb-affiliate-rest-controller.php';
+require_once __DIR__ . '/class-mtb-affiliate-product-library-list-table.php';
 
 final class MTB_Affiliate_Plugin {
     private static ?MTB_Affiliate_Plugin $instance = null;
@@ -12,11 +13,13 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Audit_Service $auditService;
     private MTB_Affiliate_Amazon_Client $amazonClient;
     private MTB_Affiliate_Rest_Controller $restController;
+    private MTB_Affiliate_Product_Library $productLibrary;
 
     private function __construct() {
         $this->settings = new MTB_Affiliate_Settings();
         $this->auditService = new MTB_Affiliate_Audit_Service();
         $this->amazonClient = new MTB_Affiliate_Amazon_Client();
+        $this->productLibrary = new MTB_Affiliate_Product_Library();
         $this->block = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
         $this->restController = new MTB_Affiliate_Rest_Controller($this->settings, $this->amazonClient);
     }
@@ -35,6 +38,7 @@ final class MTB_Affiliate_Plugin {
         }
 
         add_action('admin_menu', [$this, 'register_settings_page']);
+        add_action( 'admin_menu', [ $this, 'register_product_library_menu' ] );
         add_action('admin_init', [$this, 'register_settings']);
         add_action('init', [$this, 'register_assets']);
         add_action('init', [$this->block, 'register']);
@@ -64,6 +68,48 @@ final class MTB_Affiliate_Plugin {
             'mtb-affiliate-cards',
             [$this, 'render_settings_page']
         );
+    }
+
+    public function register_product_library_menu(): void {
+        if ( ! function_exists( 'add_menu_page' ) ) {
+            return;
+        }
+
+        add_menu_page(
+            __( 'Affiliate Cards', 'meintechblog-affiliate-cards' ),
+            __( 'Affiliate Cards', 'meintechblog-affiliate-cards' ),
+            'manage_options',
+            'mtb-affiliate-cards-menu',
+            [ $this, 'render_product_library_page' ],
+            'dashicons-products',
+            58
+        );
+
+        add_submenu_page(
+            'mtb-affiliate-cards-menu',
+            __( 'Produkt-Bibliothek', 'meintechblog-affiliate-cards' ),
+            __( 'Produkt-Bibliothek', 'meintechblog-affiliate-cards' ),
+            'manage_options',
+            'mtb-affiliate-cards-menu',
+            [ $this, 'render_product_library_page' ]
+        );
+    }
+
+    public function render_product_library_page(): void {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $table = new MTB_Affiliate_Product_Library_List_Table( $this->productLibrary );
+        $table->prepare_items();
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html__( 'Produkt-Bibliothek', 'meintechblog-affiliate-cards' ); ?></h1>
+            <form method="post">
+                <?php $table->display(); ?>
+            </form>
+        </div>
+        <?php
     }
 
     public function register_assets(): void {
