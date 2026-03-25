@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-25T01:49:14.808Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-25T01:59:47.143Z"
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -47,6 +47,7 @@ Plan: 2 of 2
 | Phase 02-product-library-tracking-id-registry P01 | 112s | 2 tasks | 4 files |
 | Phase 02 P02 | 120 | 2 tasks | 3 files |
 | Phase 03-token-extension P01 | 107s | 2 tasks | 3 files |
+| Phase 03-token-extension P02 | 480s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,7 @@ Recent decisions affecting current work:
 - [Phase 02]: Backfill imports anomalous IDs as-is (eintechblog-*, facebook-2017-21, etc) as real historical IDs
 - [Phase 03-token-extension]: Removed 'final' from MTB_Affiliate_Product_Library to allow test double subclassing per plan spec
 - [Phase 03-token-extension]: Fast-path strpos check in Token_Prepass avoids regex overhead on posts without shorthand tokens
+- [Phase 03-token-extension]: itemResolver provided in integration test run_pipeline() so inline tokens can produce affiliate-card blocks -- without it resolve_inline_items returns empty
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:49:14.805Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-03-25T01:59:47.139Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
