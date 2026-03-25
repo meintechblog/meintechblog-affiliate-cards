@@ -575,10 +575,38 @@ final class MTB_Affiliate_Plugin {
             return;
         }
         $content = (string) $post->post_content;
-        if (stripos($content, 'meintechblog/affiliate-cards') === false) {
-            return;
+
+        // Sync block data to product library
+        if (stripos($content, 'meintechblog/affiliate-cards') !== false) {
+            $this->sync_blocks_to_library($content);
         }
-        $this->sync_blocks_to_library($content);
+
+        // Update inline affiliate link tracking IDs to match post date
+        if (stripos($content, 'amazon.de/dp/') !== false) {
+            $updated = $this->update_inline_affiliate_tags($content, (string) ($post->post_date ?? ''));
+            if ($updated !== $content) {
+                remove_action('save_post', [$this, 'handle_save_post_sync_library'], 30);
+                wp_update_post(['ID' => $postId, 'post_content' => $updated]);
+                add_action('save_post', [$this, 'handle_save_post_sync_library'], 30, 2);
+            }
+        }
+    }
+
+    /**
+     * Update tracking IDs in inline affiliate links to match the post date.
+     * Replaces meintechblog-YYMMDD-21 tags with the correct date-derived tag.
+     */
+    private function update_inline_affiliate_tags(string $content, string $postDate): string {
+        $correctTag = $this->amazonClient->derive_partner_tag($postDate);
+
+        // Match amazon.de/dp/ links with a meintechblog-*-21 tag parameter
+        return preg_replace_callback(
+            '/(https?:\/\/(?:www\.)?amazon\.de\/dp\/[A-Z0-9]{10}\?tag=)(meintechblog-\d{6}-21)/',
+            function ($matches) use ($correctTag) {
+                return $matches[1] . $correctTag;
+            },
+            $content
+        ) ?? $content;
     }
 
     /**
