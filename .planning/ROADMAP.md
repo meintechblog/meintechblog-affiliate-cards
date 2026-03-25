@@ -78,9 +78,9 @@ Plans:
   2. Selecting a product from the dropdown hydrates the block identically to typing an ASIN manually — image, title, and affiliate link all render correctly
   3. Typing `amazon:last` or `amazon:last2` in the editor's ASIN field resolves the token live in the editor preview (before saving) [ALREADY DONE — commit 6831f66]
   4. The WordPress admin has a "Produkt-Bibliothek" page showing all stored products in a list table with bulk-delete capability
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 04-01-PLAN.md — Product dropdown in block sidebar (JS only, index.js)
+- [x] 04-01-PLAN.md — Product dropdown in block sidebar (JS only, index.js)
 - [ ] 04-02-PLAN.md — Produkt-Bibliothek admin page (PHP: WP_List_Table + menu + delete_by_ids)
 **UI hint**: yes
 
@@ -94,4 +94,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Settings + Telegram Webhook Pipeline | 2/3 | In Progress|  |
 | 2. Product Library + Tracking-ID Registry | 2/2 | Complete   | 2026-03-25 |
 | 3. Token Extension | 2/2 | Complete   | 2026-03-25 |
-| 4. Editor Enhancements + Admin Page | 0/2 | Not started | - |
+| 4. Editor Enhancements + Admin Page | 1/2 | In Progress|  |

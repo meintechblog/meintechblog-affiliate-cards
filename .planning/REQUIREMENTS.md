@@ -29,8 +29,8 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 - [x] **EDIT-01**: `amazon:last` Token wird beim Speichern zum letzten Telegram-Produkt aufgeloest
 - [x] **EDIT-02**: `amazon:heute` / `amazon:today` Token fuegt alle heute empfangenen Produkte als Cards ein
 - [x] **EDIT-05**: `amazon:gestern` / `amazon:yesterday` Token fuegt alle gestern empfangenen Produkte als Cards ein
-- [ ] **EDIT-03**: Affiliate Card Block hat Dropdown-Picker mit gespeicherten Produkten (neueste oben)
-- [ ] **EDIT-04**: Dropdown-Auswahl hydrated den Block identisch zu manueller ASIN-Eingabe
+- [x] **EDIT-03**: Affiliate Card Block hat Dropdown-Picker mit gespeicherten Produkten (neueste oben)
+- [x] **EDIT-04**: Dropdown-Auswahl hydrated den Block identisch zu manueller ASIN-Eingabe
 
 ### Tracking-ID Registry
 
@@ -89,8 +89,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLIB-04 | Phase 4 | Pending |
 | EDIT-01 | Phase 3 | Complete |
 | EDIT-02 | Phase 3 | Complete |
-| EDIT-03 | Phase 4 | Pending |
-| EDIT-04 | Phase 4 | Pending |
+| EDIT-03 | Phase 4 | Complete |
+| EDIT-04 | Phase 4 | Complete |
 | TRID-01 | Phase 2 | Complete |
 | TRID-02 | Phase 2 | Complete |
 | TRID-03 | Phase 1 | Complete |
