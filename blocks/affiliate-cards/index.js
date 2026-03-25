@@ -147,8 +147,8 @@
 
     function hydrateAffiliateBlock( editorSelect, editorDispatch, clientId, asin, postId, attempt ) {
         attempt = attempt || 1;
-        var MAX_RETRIES = 3;
-        var RETRY_DELAY = 2000;
+        var MAX_RETRIES = 5;
+        var RETRY_DELAY = 3000;
 
         const headers = {};
         if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
@@ -881,14 +881,34 @@
                                     updateItem( 'titleOverride', value === baseTitle ? '' : value );
                                 }
                             } ),
-                            el( TextareaControl, {
-                                label: 'Beschreibung',
-                                className: 'mtb-affiliate-cards-editor__benefit-input',
-                                value: item.benefit || '',
-                                onChange: function ( value ) {
-                                    updateItem( 'benefit', value );
-                                }
-                            } ),
+                            el(
+                                'div',
+                                { className: 'mtb-affiliate-cards-editor__benefit-wrap' },
+                                el( TextareaControl, {
+                                    label: 'Beschreibung',
+                                    className: 'mtb-affiliate-cards-editor__benefit-input',
+                                    value: item.benefit || '',
+                                    onChange: function ( value ) {
+                                        if ( value.length <= 160 ) {
+                                            updateItem( 'benefit', value );
+                                        }
+                                    }
+                                } ),
+                                el(
+                                    'span',
+                                    {
+                                        className: 'mtb-affiliate-cards-editor__char-count',
+                                        style: {
+                                            display: 'block',
+                                            textAlign: 'right',
+                                            fontSize: '12px',
+                                            marginTop: '-8px',
+                                            color: ( item.benefit || '' ).length > 140 ? '#cc1818' : '#757575'
+                                        }
+                                    },
+                                    ( item.benefit || '' ).length + ' / 160'
+                                )
+                            ),
                             isLoading && el(
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading' },
