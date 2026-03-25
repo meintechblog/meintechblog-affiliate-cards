@@ -115,21 +115,7 @@ final class MTB_Affiliate_Plugin {
     }
 
     public function register_settings_page(): void {
-        if (! function_exists('add_options_page')) {
-            return;
-        }
-
-        add_options_page(
-            'Affiliate Card',
-            'Affiliate Card',
-            'manage_options',
-            'mtb-affiliate-cards',
-            [$this, 'render_settings_page']
-        );
-    }
-
-    public function register_product_library_menu(): void {
-        if ( ! function_exists( 'add_menu_page' ) ) {
+        if (! function_exists('add_menu_page')) {
             return;
         }
 
@@ -151,6 +137,19 @@ final class MTB_Affiliate_Plugin {
             'mtb-affiliate-cards-menu',
             [ $this, 'render_product_library_page' ]
         );
+
+        add_submenu_page(
+            'mtb-affiliate-cards-menu',
+            __( 'Einstellungen', 'meintechblog-affiliate-cards' ),
+            __( 'Einstellungen', 'meintechblog-affiliate-cards' ),
+            'manage_options',
+            'mtb-affiliate-cards',
+            [$this, 'render_settings_page']
+        );
+    }
+
+    /** @deprecated Merged into register_settings_page */
+    public function register_product_library_menu(): void {
     }
 
     public function render_product_library_page(): void {
