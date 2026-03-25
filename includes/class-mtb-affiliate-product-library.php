@@ -114,6 +114,50 @@ final class MTB_Affiliate_Product_Library {
         return is_array($row) ? $row : null;
     }
 
+    /**
+     * Get all products received on a specific UTC date.
+     *
+     * @param string $date Date in Y-m-d format (UTC).
+     * @return array Array of associative arrays sorted by received_at DESC.
+     */
+    public function get_products_by_date(string $date): array {
+        global $wpdb;
+
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return [];
+        }
+
+        $table = $this->table_name();
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE DATE(received_at) = %s ORDER BY received_at DESC",
+                $date
+            ),
+            ARRAY_A
+        );
+
+        return is_array($results) ? $results : [];
+    }
+
+    /**
+     * Get all products received today (UTC).
+     *
+     * @return array Array of associative arrays sorted by received_at DESC.
+     */
+    public function get_products_today(): array {
+        return $this->get_products_by_date(gmdate('Y-m-d'));
+    }
+
+    /**
+     * Get all products received yesterday (UTC).
+     *
+     * @return array Array of associative arrays sorted by received_at DESC.
+     */
+    public function get_products_yesterday(): array {
+        return $this->get_products_by_date(gmdate('Y-m-d', strtotime('-1 day')));
+    }
+
     public static function needs_upgrade(): bool {
         return get_option(self::DB_VERSION_OPTION, '0') !== self::DB_VERSION;
     }
