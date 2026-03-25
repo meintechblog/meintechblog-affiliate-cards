@@ -13,6 +13,7 @@
     const Button = components.Button;
     const TOKEN_PATTERN = /^amazon:([A-Z0-9]{10})$/;
     const SHORTHAND_PATTERN = /^amazon:(last|heute|today|gestern|yesterday)$/i;
+    const INLINE_TOKEN_PATTERN = /amazon:([A-Z0-9]{10})(?:\s|&nbsp;|$)/;
     const HYDRATION_ENDPOINT = 'mtb-affiliate-cards/v1/item';
     const PRODUCTS_ENDPOINT = 'mtb-affiliate-cards/v1/products';
     const BADGE_OPTIONS = [
@@ -352,7 +353,63 @@
                     return;
                 }
 
-                /* --- Standard ASIN tokens: amazon:B0XXXXXXXX --- */
+                /* --- Inline tokens: amazon:ASIN within text → affiliate link --- */
+                /* Triggers on Enter (deselected paragraph with mixed content) */
+                for ( var ii = 0; ii < allBlocks.length; ii++ ) {
+                    var iBlock = allBlocks[ ii ];
+                    if ( ! iBlock || iBlock.name !== 'core/paragraph' || iBlock.clientId === selectedClientId ) { continue; }
+                    var iNorm = normalizeParagraphContent( iBlock.attributes && iBlock.attributes.content );
+                    /* Skip standalone tokens (handled by other sections) */
+                    if ( TOKEN_PATTERN.test( iNorm ) || SHORTHAND_PATTERN.test( iNorm ) ) { continue; }
+                    /* Must contain amazon:ASIN as part of larger text */
+                    var iMatch = iNorm.match( /amazon:([A-Z0-9]{10})/i );
+                    if ( ! iMatch ) { continue; }
+                    /* Skip already-processed paragraphs */
+                    var iRawStr = String( iBlock.attributes && iBlock.attributes.content || '' );
+                    if ( iRawStr.indexOf( 'Affiliate-Link' ) !== -1 ) { continue; }
+
+                    isHandlingTokenReplacement = true;
+                    var inlineAsin = iMatch[ 1 ].toUpperCase();
+                    var inlineClientId = iBlock.clientId;
+
+                    showNotice( 'Inline-Link: amazon:' + inlineAsin + ' wird aufgeloest...', 'info' );
+
+                    ( function ( capturedAsin, capturedClientId ) {
+                        var postId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
+                        var hUrl = buildHydrationUrl( capturedAsin, postId );
+                        var hHeaders = {};
+                        if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+                            hHeaders[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+                        }
+
+                        fetch( hUrl, { credentials: 'same-origin', headers: hHeaders } )
+                            .then( function ( resp ) {
+                                if ( ! resp.ok ) { throw new Error( 'HTTP ' + resp.status ); }
+                                return resp.json();
+                            } )
+                            .then( function ( payload ) {
+                                var title = payload && payload.title ? payload.title : capturedAsin;
+                                var detailUrl = payload && payload.detailUrl ? payload.detailUrl : 'https://www.amazon.de/dp/' + capturedAsin;
+                                if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
+                                var linkHtml = '<a href="' + detailUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
+                                var liveBlock = editorSelect.getBlock( capturedClientId );
+                                if ( ! liveBlock ) { return; }
+                                var currentContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
+                                var newContent = currentContent.replace( /amazon:[A-Za-z0-9]{10}/i, linkHtml );
+                                editorDispatch.updateBlockAttributes( capturedClientId, { content: newContent } );
+                                showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
+                            } )
+                            .catch( function ( err ) {
+                                showNotice( 'Inline-Link Fehler: ' + ( err && err.message || 'Unbekannt' ), 'error' );
+                            } )
+                            .finally( function () {
+                                window.setTimeout( function () { isHandlingTokenReplacement = false; }, 0 );
+                            } );
+                    } )( inlineAsin, inlineClientId );
+                    return;
+                }
+
+                /* --- Standard ASIN tokens: amazon:B0XXXXXXXX (standalone) --- */
                 const tokenBlock = allBlocks.find( function ( block ) {
                     return (
                         block &&
@@ -381,15 +438,10 @@
                     );
 
                     if ( existingAsins.has( asin ) ) {
-                        editorDispatch.removeBlocks( [ tokenBlock.clientId ], false );
-                        if ( window.wp.data.dispatch( 'core/notices' ) ) {
-                            window.wp.data.dispatch( 'core/notices' ).createNotice(
-                                'info',
-                                'Dieses Amazon-Produkt ist in diesem Beitrag bereits vorhanden.',
-                                { type: 'snackbar', isDismissible: true }
-                            );
-                        }
-                    } else {
+                        showNotice( 'Affiliate Card nochmal hinzugefuegt: ' + asin, 'info' );
+                    }
+
+                    {
                         const replacementBlock = createBlock( 'meintechblog/affiliate-cards', {
                             items: [ { asin: asin } ],
                             badgeMode: 'auto',
