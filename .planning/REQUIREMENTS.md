@@ -26,8 +26,9 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 ### Editor-Erweiterung
 
-- [ ] **EDIT-01**: `amazon:last` Token wird im Editor live zum letzten Telegram-Produkt aufgeloest
-- [ ] **EDIT-02**: `amazon:lastN` Token (last2, last3 etc.) wird zum N-t-letzten Produkt aufgeloest
+- [ ] **EDIT-01**: `amazon:last` Token wird beim Speichern zum letzten Telegram-Produkt aufgeloest
+- [ ] **EDIT-02**: `amazon:heute` / `amazon:today` Token fuegt alle heute empfangenen Produkte als Cards ein
+- [ ] **EDIT-05**: `amazon:gestern` / `amazon:yesterday` Token fuegt alle gestern empfangenen Produkte als Cards ein
 - [ ] **EDIT-03**: Affiliate Card Block hat Dropdown-Picker mit gespeicherten Produkten (neueste oben)
 - [ ] **EDIT-04**: Dropdown-Auswahl hydrated den Block identisch zu manueller ASIN-Eingabe
 

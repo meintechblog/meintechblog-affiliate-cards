@@ -55,13 +55,15 @@ Plans:
 - [x] 02-02-PLAN.md — Telegram handler product storage integration + tracking-ID backfill script
 
 ### Phase 3: Token Extension
-**Goal**: Posts saved with `amazon:last` or `amazon:lastN` paragraph tokens are automatically converted to affiliate-card blocks using the most-recently-received products
+**Goal**: Posts saved with `amazon:last`, `amazon:heute`/`amazon:today`, or `amazon:gestern`/`amazon:yesterday` tokens are automatically converted to affiliate-card blocks
 **Depends on**: Phase 2
-**Requirements**: EDIT-01, EDIT-02
+**Requirements**: EDIT-01, EDIT-02, EDIT-05
 **Success Criteria** (what must be TRUE):
-  1. Saving a post that contains an `amazon:last` token in a paragraph block converts it to an affiliate card block using the ASIN from the most-recently-received product
-  2. `amazon:last2` converts to the second-most-recent product; `amazon:last3` to the third; no unsolved tokens remain in the saved post content
-  3. A post that contains no `amazon:last` tokens is saved identically to before — no regressions in existing token processing
+  1. Saving a post with `amazon:last` converts it to an affiliate card using the most-recently-received product
+  2. `amazon:heute` or `amazon:today` inserts ALL products received today as sequential affiliate cards
+  3. `amazon:gestern` or `amazon:yesterday` inserts ALL products received yesterday as sequential affiliate cards
+  4. Inline tokens (within text) link the first product and add cards below the paragraph
+  5. No regressions in existing `amazon:ASIN` token processing
 **Plans**: TBD
 
 ### Phase 4: Editor Enhancements + Admin Page
