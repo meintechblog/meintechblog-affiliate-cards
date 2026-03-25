@@ -6,15 +6,18 @@ final class MTB_Affiliate_Rest_Controller {
     private MTB_Affiliate_Settings $settings;
     private MTB_Affiliate_Amazon_Client $amazonClient;
     private MTB_Affiliate_Badge_Resolver $badgeResolver;
+    private ?MTB_Affiliate_Telegram_Handler $telegramHandler;
 
     public function __construct(
         MTB_Affiliate_Settings $settings,
         MTB_Affiliate_Amazon_Client $amazonClient,
-        ?MTB_Affiliate_Badge_Resolver $badgeResolver = null
+        ?MTB_Affiliate_Badge_Resolver $badgeResolver = null,
+        ?MTB_Affiliate_Telegram_Handler $telegramHandler = null
     ) {
-        $this->settings = $settings;
-        $this->amazonClient = $amazonClient;
-        $this->badgeResolver = $badgeResolver ?? new MTB_Affiliate_Badge_Resolver();
+        $this->settings         = $settings;
+        $this->amazonClient     = $amazonClient;
+        $this->badgeResolver    = $badgeResolver ?? new MTB_Affiliate_Badge_Resolver();
+        $this->telegramHandler  = $telegramHandler;
     }
 
     public function register_routes(): void {
@@ -37,6 +40,12 @@ final class MTB_Affiliate_Rest_Controller {
                 ],
             ],
         ]);
+
+        register_rest_route('mtb-affiliate-cards/v1', '/telegram', [
+            'methods'             => 'POST',
+            'callback'            => [$this, 'handle_telegram_webhook'],
+            'permission_callback' => '__return_true',
+        ]);
     }
 
     public function can_view_item(): bool {
@@ -45,6 +54,32 @@ final class MTB_Affiliate_Rest_Controller {
         }
 
         return (bool) current_user_can('edit_posts');
+    }
+
+    public function handle_telegram_webhook($request): \WP_REST_Response {
+        // 1. Validate secret token (D-13) — BEFORE any business logic
+        $settings       = $this->settings->get_all();
+        $expectedSecret = $settings['telegram_webhook_secret'] ?? '';
+        $receivedSecret = $request->get_header('x-telegram-bot-api-secret-token') ?? '';
+
+        if ($expectedSecret === '' || ! hash_equals($expectedSecret, $receivedSecret)) {
+            return new \WP_REST_Response(null, 403);
+        }
+
+        // 2. Chat-ID filtering (D-14) — optional, silently ignore unauthorized
+        $payload       = $request->get_json_params();
+        $chatId        = (int) ($payload['message']['chat']['id'] ?? 0);
+        $allowedChatId = (int) ($settings['telegram_chat_id'] ?? 0);
+        if ($allowedChatId !== 0 && $chatId !== $allowedChatId) {
+            return new \WP_REST_Response(null, 200);
+        }
+
+        // 3. Delegate to handler (D-15: always return 200)
+        if ($this->telegramHandler !== null) {
+            $this->telegramHandler->handle($payload);
+        }
+
+        return new \WP_REST_Response(null, 200);
     }
 
     public function get_item($request) {

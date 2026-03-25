@@ -12,13 +12,28 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Audit_Service $auditService;
     private MTB_Affiliate_Amazon_Client $amazonClient;
     private MTB_Affiliate_Rest_Controller $restController;
+    private MTB_Affiliate_Tracking_Registry $trackingRegistry;
+    private MTB_Affiliate_Url_Resolver $urlResolver;
+    private MTB_Affiliate_Telegram_Handler $telegramHandler;
 
     private function __construct() {
-        $this->settings = new MTB_Affiliate_Settings();
-        $this->auditService = new MTB_Affiliate_Audit_Service();
-        $this->amazonClient = new MTB_Affiliate_Amazon_Client();
-        $this->block = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
-        $this->restController = new MTB_Affiliate_Rest_Controller($this->settings, $this->amazonClient);
+        $this->settings         = new MTB_Affiliate_Settings();
+        $this->auditService     = new MTB_Affiliate_Audit_Service();
+        $this->amazonClient     = new MTB_Affiliate_Amazon_Client();
+        $this->trackingRegistry = new MTB_Affiliate_Tracking_Registry();
+        $this->urlResolver      = new MTB_Affiliate_Url_Resolver();
+        $this->telegramHandler  = new MTB_Affiliate_Telegram_Handler(
+            $this->settings,
+            $this->urlResolver,
+            $this->trackingRegistry
+        );
+        $this->block          = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
+        $this->restController = new MTB_Affiliate_Rest_Controller(
+            $this->settings,
+            $this->amazonClient,
+            null,
+            $this->telegramHandler
+        );
     }
 
     public static function instance(): MTB_Affiliate_Plugin {
@@ -41,11 +56,49 @@ final class MTB_Affiliate_Plugin {
         add_action('rest_api_init', [$this->restController, 'register_routes']);
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
         add_action('admin_post_mtb_affiliate_audit', [$this, 'handle_audit_admin_post']);
+        add_action('wp_ajax_mtb_check_webhook_status', [$this, 'ajax_check_webhook_status']);
     }
 
     public static function activate(): void {
         $settings = new MTB_Affiliate_Settings();
         $settings->save($settings->defaults());
+        MTB_Affiliate_Tracking_Registry::create_table();
+    }
+
+    public function ajax_check_webhook_status(): void {
+        if (function_exists('check_ajax_referer')) {
+            check_ajax_referer('mtb_webhook_status_check', 'nonce');
+        }
+        if (! function_exists('current_user_can') || ! current_user_can('manage_options')) {
+            wp_die();
+        }
+
+        $settings = $this->settings->get_all();
+        $botToken = $settings['telegram_bot_token'] ?? '';
+        if ($botToken === '') {
+            wp_send_json(['active' => false, 'error' => 'Kein Bot-Token konfiguriert.']);
+            return;
+        }
+
+        $response = wp_remote_get(
+            'https://api.telegram.org/bot' . $botToken . '/getWebhookInfo',
+            ['timeout' => 10]
+        );
+
+        if (is_wp_error($response)) {
+            wp_send_json(['active' => false, 'error' => $response->get_error_message()]);
+            return;
+        }
+
+        $body       = json_decode((string) wp_remote_retrieve_body($response), true);
+        $webhookUrl = $body['result']['url'] ?? '';
+        $active     = $webhookUrl !== '' && str_contains($webhookUrl, 'telegram');
+
+        wp_send_json([
+            'active'  => $active,
+            'url'     => $webhookUrl,
+            'pending' => (int) ($body['result']['pending_update_count'] ?? 0),
+        ]);
     }
 
     public function register_settings(): void {
