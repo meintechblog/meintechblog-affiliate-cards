@@ -691,7 +691,12 @@
                             ! isLoading && ! images.length && el(
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--empty' },
-                                'Noch kein Produktbild geladen'
+                                el( 'span', {}, 'Noch kein Produktbild geladen' ),
+                                currentAsin && el(
+                                    Button,
+                                    { isSecondary: true, onClick: retryHydration, style: { marginTop: '8px' } },
+                                    'Produktdaten neu laden'
+                                )
                             )
                         ),
                         el(
