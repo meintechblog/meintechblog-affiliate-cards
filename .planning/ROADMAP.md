@@ -31,9 +31,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Sending a date string (`heute`, `YYMMDD`, `DD.MM.YY`) or `reset` changes the tracking ID used in subsequent replies; messages from unauthorized chat IDs are silently ignored
   6. Bot warnt per Telegram wenn fuer das Post-Datum keine Tracking-ID in der Registry hinterlegt ist
   7. User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
-- [ ] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
+- [x] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
 - [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
 - [ ] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
 **UI hint**: yes
@@ -80,7 +80,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Settings + Telegram Webhook Pipeline | 0/? | Not started | - |
+| 1. Settings + Telegram Webhook Pipeline | 1/3 | In Progress|  |
 | 2. Product Library + Tracking-ID Registry | 0/? | Not started | - |
 | 3. Token Extension | 0/? | Not started | - |
 | 4. Editor Enhancements + Admin Page | 0/? | Not started | - |

@@ -40,8 +40,8 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 ### Settings
 
-- [ ] **SETT-01**: Bot-Token ist in Plugin-Settings konfigurierbar
-- [ ] **SETT-02**: Chat-ID ist als optionales Feld in Plugin-Settings konfigurierbar
+- [x] **SETT-01**: Bot-Token ist in Plugin-Settings konfigurierbar
+- [x] **SETT-02**: Chat-ID ist als optionales Feld in Plugin-Settings konfigurierbar
 - [ ] **SETT-03**: Webhook-Status (aktiv/inaktiv) wird in Settings angezeigt
 
 ## v2 Requirements
@@ -94,8 +94,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRID-02 | Phase 2 | Pending |
 | TRID-03 | Phase 1 | Pending |
 | TRID-04 | Phase 1 | Pending |
-| SETT-01 | Phase 1 | Pending |
-| SETT-02 | Phase 1 | Pending |
+| SETT-01 | Phase 1 | Complete |
+| SETT-02 | Phase 1 | Complete |
 | SETT-03 | Phase 1 | Pending |
 
 **Coverage:**
