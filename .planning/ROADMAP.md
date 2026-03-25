@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Settings + Telegram Webhook Pipeline** - Bot credentials in settings; full end-to-end Telegram message processing with affiliate link reply
 - [x] **Phase 2: Product Library + Tracking-ID Registry** - Custom DB tables persisting products and tracking IDs; REST endpoints; backfill (completed 2026-03-25)
-- [ ] **Phase 3: Token Extension** - Server-side `amazon:last` / `amazon:lastN` pre-pass in Post Processor
+- [ ] **Phase 3: Token Extension** - Server-side `amazon:last` / `amazon:heute` / `amazon:gestern` pre-pass in Post Processor
 - [ ] **Phase 4: Editor Enhancements + Admin Page** - Dropdown picker in Gutenberg block; live editor tokens; WP_List_Table admin page
 
 ## Phase Details
@@ -64,7 +64,10 @@ Plans:
   3. `amazon:gestern` or `amazon:yesterday` inserts ALL products received yesterday as sequential affiliate cards
   4. Inline tokens (within text) link the first product and add cards below the paragraph
   5. No regressions in existing `amazon:ASIN` token processing
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 03-01-PLAN.md — Product Library date methods + Token Prepass class with unit tests
+- [ ] 03-02-PLAN.md — Wire prepass into handle_save_post + integration tests
 
 ### Phase 4: Editor Enhancements + Admin Page
 **Goal**: Authors can visually pick a saved product from a dropdown in the block editor, and can inspect the full product library without database access
@@ -87,5 +90,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Settings + Telegram Webhook Pipeline | 2/3 | In Progress|  |
 | 2. Product Library + Tracking-ID Registry | 2/2 | Complete   | 2026-03-25 |
-| 3. Token Extension | 0/? | Not started | - |
+| 3. Token Extension | 0/2 | Planned | - |
 | 4. Editor Enhancements + Admin Page | 0/? | Not started | - |
