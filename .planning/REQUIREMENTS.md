@@ -33,8 +33,8 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 ### Tracking-ID Registry
 
-- [ ] **TRID-01**: Plugin speichert alle verfuegbaren Tracking-IDs in DB (eigene Tabelle)
-- [ ] **TRID-02**: Bestehende Tracking-IDs koennen per Backfill importiert werden (~170 IDs)
+- [x] **TRID-01**: Plugin speichert alle verfuegbaren Tracking-IDs in DB (eigene Tabelle)
+- [x] **TRID-02**: Bestehende Tracking-IDs koennen per Backfill importiert werden (~170 IDs)
 - [x] **TRID-03**: Bot warnt per Telegram wenn ein Post-Datum keine passende Tracking-ID hat
 - [x] **TRID-04**: User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
 
@@ -90,8 +90,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EDIT-02 | Phase 3 | Pending |
 | EDIT-03 | Phase 4 | Pending |
 | EDIT-04 | Phase 4 | Pending |
-| TRID-01 | Phase 2 | Pending |
-| TRID-02 | Phase 2 | Pending |
+| TRID-01 | Phase 2 | Complete |
+| TRID-02 | Phase 2 | Complete |
 | TRID-03 | Phase 1 | Complete |
 | TRID-04 | Phase 1 | Complete |
 | SETT-01 | Phase 1 | Complete |
