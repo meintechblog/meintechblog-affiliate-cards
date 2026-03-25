@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-final class MTB_Affiliate_Product_Library {
+class MTB_Affiliate_Product_Library {
     private const TABLE_SUFFIX = 'mtb_affiliate_products';
     private const DB_VERSION = '1.0';
     private const DB_VERSION_OPTION = 'mtb_affiliate_products_db_version';
