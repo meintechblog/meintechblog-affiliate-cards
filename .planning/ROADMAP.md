@@ -51,7 +51,7 @@ Plans:
   6. ~170 bestehende Tracking-IDs sind per Backfill-Script importierbar
 **Plans:** 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — Product Library class + table creation + REST endpoints + plugin wiring
+- [x] 02-01-PLAN.md — Product Library class + table creation + REST endpoints + plugin wiring
 - [ ] 02-02-PLAN.md — Telegram handler product storage integration + tracking-ID backfill script
 
 ### Phase 3: Token Extension

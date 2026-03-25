@@ -9,19 +9,19 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 ### Telegram Bot
 
-- [ ] **TGBOT-01**: Plugin empfaengt Telegram-Nachrichten via Webhook und validiert Secret-Token
-- [ ] **TGBOT-02**: Bot antwortet mit fertigem Affiliate-Link (ASIN + aktuelle Tracking-ID)
+- [x] **TGBOT-01**: Plugin empfaengt Telegram-Nachrichten via Webhook und validiert Secret-Token
+- [x] **TGBOT-02**: Bot antwortet mit fertigem Affiliate-Link (ASIN + aktuelle Tracking-ID)
 - [x] **TGBOT-03**: Bot loest ShortURLs auf (amzn.to / amzn.eu) und extrahiert ASIN
-- [ ] **TGBOT-04**: Bot akzeptiert direkte ASINs (B0XXXXXXXX) und Amazon-Produkt-URLs
-- [ ] **TGBOT-05**: User kann Tracking-ID per Datum setzen (heute, YYMMDD, DD.MM.YY/YYYY)
-- [ ] **TGBOT-06**: User kann Tracking-ID per "reset" auf Default zuruecksetzen
-- [ ] **TGBOT-07**: Bot filtert optional nach Chat-ID (konfigurierbar in Settings)
+- [x] **TGBOT-04**: Bot akzeptiert direkte ASINs (B0XXXXXXXX) und Amazon-Produkt-URLs
+- [x] **TGBOT-05**: User kann Tracking-ID per Datum setzen (heute, YYMMDD, DD.MM.YY/YYYY)
+- [x] **TGBOT-06**: User kann Tracking-ID per "reset" auf Default zuruecksetzen
+- [x] **TGBOT-07**: Bot filtert optional nach Chat-ID (konfigurierbar in Settings)
 
 ### Produkt-Bibliothek
 
-- [ ] **PLIB-01**: Empfangene Produkte werden automatisch in Custom DB Table gespeichert
-- [ ] **PLIB-02**: Produkt-Eintrag enthaelt ASIN, Titel, Detail-URL, Bild-URL, Empfangsdatum
-- [ ] **PLIB-03**: REST API Endpoint liefert gespeicherte Produkte (sortiert nach Datum, neueste zuerst)
+- [x] **PLIB-01**: Empfangene Produkte werden automatisch in Custom DB Table gespeichert
+- [x] **PLIB-02**: Produkt-Eintrag enthaelt ASIN, Titel, Detail-URL, Bild-URL, Empfangsdatum
+- [x] **PLIB-03**: REST API Endpoint liefert gespeicherte Produkte (sortiert nach Datum, neueste zuerst)
 - [ ] **PLIB-04**: Admin-Seite zeigt alle gespeicherten Produkte als WP_List_Table
 
 ### Editor-Erweiterung
@@ -35,8 +35,8 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 - [ ] **TRID-01**: Plugin speichert alle verfuegbaren Tracking-IDs in DB (eigene Tabelle)
 - [ ] **TRID-02**: Bestehende Tracking-IDs koennen per Backfill importiert werden (~170 IDs)
-- [ ] **TRID-03**: Bot warnt per Telegram wenn ein Post-Datum keine passende Tracking-ID hat
-- [ ] **TRID-04**: User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
+- [x] **TRID-03**: Bot warnt per Telegram wenn ein Post-Datum keine passende Tracking-ID hat
+- [x] **TRID-04**: User kann per Telegram-Antwort (done/ok/angelegt) eine neue Tracking-ID als verfuegbar markieren
 
 ### Settings
 
@@ -75,16 +75,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TGBOT-01 | Phase 1 | Pending |
-| TGBOT-02 | Phase 1 | Pending |
+| TGBOT-01 | Phase 1 | Complete |
+| TGBOT-02 | Phase 1 | Complete |
 | TGBOT-03 | Phase 1 | Complete |
-| TGBOT-04 | Phase 1 | Pending |
-| TGBOT-05 | Phase 1 | Pending |
-| TGBOT-06 | Phase 1 | Pending |
-| TGBOT-07 | Phase 1 | Pending |
-| PLIB-01 | Phase 2 | Pending |
-| PLIB-02 | Phase 2 | Pending |
-| PLIB-03 | Phase 2 | Pending |
+| TGBOT-04 | Phase 1 | Complete |
+| TGBOT-05 | Phase 1 | Complete |
+| TGBOT-06 | Phase 1 | Complete |
+| TGBOT-07 | Phase 1 | Complete |
+| PLIB-01 | Phase 2 | Complete |
+| PLIB-02 | Phase 2 | Complete |
+| PLIB-03 | Phase 2 | Complete |
 | PLIB-04 | Phase 4 | Pending |
 | EDIT-01 | Phase 3 | Pending |
 | EDIT-02 | Phase 3 | Pending |
@@ -92,8 +92,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EDIT-04 | Phase 4 | Pending |
 | TRID-01 | Phase 2 | Pending |
 | TRID-02 | Phase 2 | Pending |
-| TRID-03 | Phase 1 | Pending |
-| TRID-04 | Phase 1 | Pending |
+| TRID-03 | Phase 1 | Complete |
+| TRID-04 | Phase 1 | Complete |
 | SETT-01 | Phase 1 | Complete |
 | SETT-02 | Phase 1 | Complete |
 | SETT-03 | Phase 1 | Complete |
