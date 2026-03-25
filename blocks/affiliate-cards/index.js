@@ -22,10 +22,28 @@
     ];
     let isHandlingTokenReplacement = false;
 
+    function showNotice( message, type ) {
+        if ( window.wp && window.wp.data && window.wp.data.dispatch( 'core/notices' ) ) {
+            window.wp.data.dispatch( 'core/notices' ).createNotice(
+                type || 'info',
+                '[MTB] ' + message,
+                { type: 'snackbar', isDismissible: true }
+            );
+        }
+    }
+
     function normalizeParagraphContent( content ) {
-        return String( content || '' )
+        if ( ! content ) { return ''; }
+        /* Handle RichTextData objects (WP 6.2+) */
+        var raw = typeof content === 'object' && content !== null
+            ? ( typeof content.toHTMLString === 'function' ? content.toHTMLString()
+              : typeof content.toString === 'function' ? content.toString()
+              : String( content ) )
+            : String( content );
+        return raw
             .replace( /<[^>]+>/g, '' )
             .replace( /&nbsp;/g, ' ' )
+            .replace( /[\u200B\u200C\u200D\uFEFF\u00A0]/g, '' )
             .trim();
     }
 
@@ -250,40 +268,50 @@
                 const selectedClientId = editorSelect.getSelectedBlockClientId();
 
                 /* --- Shorthand tokens: amazon:last, amazon:heute, amazon:gestern --- */
-                const shorthandBlock = allBlocks.find( function ( block ) {
-                    return (
-                        block &&
-                        block.name === 'core/paragraph' &&
-                        block.clientId !== selectedClientId &&
-                        extractShorthandToken( block.attributes && block.attributes.content )
-                    );
-                } );
+                var shorthandBlock = null;
+                for ( var si = 0; si < allBlocks.length; si++ ) {
+                    var sBlock = allBlocks[ si ];
+                    if ( ! sBlock || sBlock.name !== 'core/paragraph' || sBlock.clientId === selectedClientId ) {
+                        continue;
+                    }
+                    var sContent = sBlock.attributes && sBlock.attributes.content;
+                    var sNormalized = normalizeParagraphContent( sContent );
+                    if ( sNormalized && SHORTHAND_PATTERN.test( sNormalized ) ) {
+                        shorthandBlock = sBlock;
+                        break;
+                    }
+                }
 
                 if ( shorthandBlock ) {
                     var keyword = extractShorthandToken( shorthandBlock.attributes && shorthandBlock.attributes.content );
                     if ( ! keyword ) { return; }
 
                     isHandlingTokenReplacement = true;
+                    showNotice( 'Token erkannt: amazon:' + keyword + ' — lade Produkte...', 'info' );
 
                     var fetchUrl = buildProductsUrl( keyword );
-                    var nonce = ( window.wpApiSettings && window.wpApiSettings.nonce ) || '';
+                    var fetchHeaders = {};
+                    if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+                        fetchHeaders[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+                    }
 
-                    fetch( fetchUrl, { headers: { 'X-WP-Nonce': nonce } } )
-                        .then( function ( resp ) { return resp.json(); } )
+                    fetch( fetchUrl, { credentials: 'same-origin', headers: fetchHeaders } )
+                        .then( function ( resp ) {
+                            if ( ! resp.ok ) {
+                                throw new Error( 'HTTP ' + resp.status );
+                            }
+                            return resp.json();
+                        } )
                         .then( function ( data ) {
                             var products = keyword === 'last' ? ( data && data.asin ? [ data ] : [] ) : ( Array.isArray( data ) ? data : [] );
 
                             if ( products.length === 0 ) {
                                 editorDispatch.removeBlocks( [ shorthandBlock.clientId ], false );
-                                if ( window.wp.data.dispatch( 'core/notices' ) ) {
-                                    window.wp.data.dispatch( 'core/notices' ).createNotice(
-                                        'info',
-                                        'Keine Produkte gefunden fuer amazon:' + keyword,
-                                        { type: 'snackbar', isDismissible: true }
-                                    );
-                                }
+                                showNotice( 'Keine Produkte gefunden fuer amazon:' + keyword, 'warning' );
                                 return;
                             }
+
+                            showNotice( products.length + ' Produkt(e) geladen fuer amazon:' + keyword, 'success' );
 
                             var postId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
                             var newBlocks = products.map( function ( product ) {
@@ -311,8 +339,9 @@
                                 );
                             } );
                         } )
-                        .catch( function () {
+                        .catch( function ( err ) {
                             editorDispatch.removeBlocks( [ shorthandBlock.clientId ], false );
+                            showNotice( 'Fehler bei amazon:' + keyword + ': ' + ( err && err.message || 'Unbekannt' ), 'error' );
                         } )
                         .finally( function () {
                             window.setTimeout( function () {
