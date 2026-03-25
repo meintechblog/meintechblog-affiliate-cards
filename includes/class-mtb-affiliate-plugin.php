@@ -140,12 +140,44 @@ final class MTB_Affiliate_Plugin {
 
         add_submenu_page(
             'mtb-affiliate-cards-menu',
-            __( 'Einstellungen', 'meintechblog-affiliate-cards' ),
-            __( 'Einstellungen', 'meintechblog-affiliate-cards' ),
+            __( 'Affiliate Audit', 'meintechblog-affiliate-cards' ),
+            __( 'Affiliate Audit', 'meintechblog-affiliate-cards' ),
+            'manage_options',
+            'mtb-affiliate-cards-audit',
+            [$this, 'render_audit_page']
+        );
+
+        add_submenu_page(
+            'mtb-affiliate-cards-menu',
+            __( 'Telegram Bot', 'meintechblog-affiliate-cards' ),
+            __( 'Telegram Bot', 'meintechblog-affiliate-cards' ),
+            'manage_options',
+            'mtb-affiliate-cards-telegram',
+            [$this, 'render_telegram_page']
+        );
+
+        add_submenu_page(
+            'mtb-affiliate-cards-menu',
+            __( 'Konfiguration', 'meintechblog-affiliate-cards' ),
+            __( 'Konfiguration', 'meintechblog-affiliate-cards' ),
             'manage_options',
             'mtb-affiliate-cards',
             [$this, 'render_settings_page']
         );
+    }
+
+    public function render_audit_page(): void {
+        if (! current_user_can('manage_options')) { return; }
+        echo '<div class="wrap"><h1>' . esc_html__('Affiliate Audit', 'meintechblog-affiliate-cards') . '</h1>';
+        $this->render_audit_tab();
+        echo '</div>';
+    }
+
+    public function render_telegram_page(): void {
+        if (! current_user_can('manage_options')) { return; }
+        echo '<div class="wrap"><h1>' . esc_html__('Telegram Bot', 'meintechblog-affiliate-cards') . '</h1>';
+        $this->render_telegram_tab();
+        echo '</div>';
     }
 
     /** @deprecated Merged into register_settings_page */
@@ -195,21 +227,9 @@ final class MTB_Affiliate_Plugin {
         }
 
         $settings = $this->settings->get_all();
-        $tab = $this->current_admin_tab();
         ?>
         <div class="wrap">
-            <h1>Affiliate Card</h1>
-            <p>Grundkonfiguration und Audit-Werkzeuge fuer die nativen Amazon-Affiliate-Cards auf meintechblog.de.</p>
-            <nav class="nav-tab-wrapper">
-                <a class="nav-tab <?php echo $tab === 'settings' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=settings">Einstellungen</a>
-                <a class="nav-tab <?php echo $tab === 'audit' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=audit">Affiliate Audit</a>
-                <a class="nav-tab <?php echo $tab === 'telegram' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=telegram">Telegram Bot</a>
-            </nav>
-            <?php if ($tab === 'audit') : ?>
-                <?php $this->render_audit_tab(); ?>
-            <?php elseif ($tab === 'telegram') : ?>
-                <?php $this->render_telegram_tab(); ?>
-            <?php else : ?>
+            <h1>Konfiguration</h1>
                 <form method="post" action="options.php">
                     <?php if (function_exists('settings_fields')) : ?>
                         <?php settings_fields($this->settings->settings_group()); ?>
@@ -250,7 +270,6 @@ final class MTB_Affiliate_Plugin {
                         <?php submit_button('Einstellungen speichern'); ?>
                     <?php endif; ?>
                 </form>
-            <?php endif; ?>
         </div>
         <?php
     }
@@ -1019,8 +1038,8 @@ final class MTB_Affiliate_Plugin {
 
     private function redirect_to_audit_tab(array $args): void {
         $baseUrl = function_exists('admin_url')
-            ? admin_url('options-general.php?page=mtb-affiliate-cards&tab=audit')
-            : 'options-general.php?page=mtb-affiliate-cards&tab=audit';
+            ? admin_url('admin.php?page=mtb-affiliate-cards-audit')
+            : 'admin.php?page=mtb-affiliate-cards-audit';
 
         $url = $baseUrl;
         if (function_exists('add_query_arg')) {
