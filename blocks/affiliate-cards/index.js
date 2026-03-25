@@ -449,6 +449,29 @@
         const hasError = attributes.loadState === 'error';
         const currentAsin = item.asin ? String( item.asin ).trim().toUpperCase() : '';
         const hydrationAsinRef = useRef( currentAsin );
+        const [ products, setProducts ] = element.useState( [] );
+        const [ productsLoaded, setProductsLoaded ] = element.useState( false );
+
+        useEffect( function () {
+            if ( productsLoaded ) { return; }
+            var root = ( window.wpApiSettings && window.wpApiSettings.root )
+                ? window.wpApiSettings.root.replace( /\/+$/, '' )
+                : '/wp-json';
+            var headers = {};
+            if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+                headers[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+            }
+            window.fetch( root + '/' + PRODUCTS_ENDPOINT + '?limit=50', {
+                credentials: 'same-origin',
+                headers: headers
+            } )
+                .then( function ( r ) { return r.ok ? r.json() : []; } )
+                .then( function ( data ) {
+                    setProducts( Array.isArray( data ) ? data : [] );
+                    setProductsLoaded( true );
+                } )
+                .catch( function () { setProductsLoaded( true ); } );
+        }, [] );
 
         function updateItem( key, value ) {
             props.setAttributes( {
@@ -597,6 +620,23 @@
                         value: item.asin || '',
                         onChange: function ( value ) {
                             updateItem( 'asin', value.trim().toUpperCase() );
+                        }
+                    } ),
+                    products.length > 0 && el( SelectControl, {
+                        label: i18n.__( 'Aus Bibliothek wählen', 'meintechblog-affiliate-cards' ),
+                        value: '',
+                        options: [ { label: '— Produkt auswählen —', value: '' } ].concat(
+                            products.map( function ( p ) {
+                                return {
+                                    label: ( p.title || p.asin ) + ' (' + p.asin + ')',
+                                    value: p.asin
+                                };
+                            } )
+                        ),
+                        onChange: function ( value ) {
+                            if ( value ) {
+                                updateItem( 'asin', value.trim().toUpperCase() );
+                            }
                         }
                     } ),
                     el( SelectControl, {
