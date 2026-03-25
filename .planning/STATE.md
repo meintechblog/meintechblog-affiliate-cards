@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 01-03 Task 1; awaiting human-verify checkpoint (Task 2)
-last_updated: "2026-03-25T00:31:27.591Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-25T00:33:59.947Z"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -43,6 +43,7 @@ Plan: 3 of 3
 *Updated after each plan completion*
 | Phase 01-settings-telegram-webhook-pipeline P01 | 89s | 3 tasks | 4 files |
 | Phase 01-settings-telegram-webhook-pipeline P03 | 55s | 1 tasks | 1 files |
+| Phase 01-settings-telegram-webhook-pipeline P02 | 151 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,9 @@ Recent decisions affecting current work:
 - [Phase 01-settings-telegram-webhook-pipeline]: wp_remote_get (not wp_safe_remote_get) for amzn.to resolution — safe variant blocks Amazon redirect chain
 - [Phase 01-settings-telegram-webhook-pipeline]: B0-prefix ASIN pattern from flows.json extractAsin() — narrower than normalize_asin() in REST controller
 - [Phase 01-settings-telegram-webhook-pipeline]: Inline XHR (not fetch/wp.ajax) for webhook status check — consistent with WP admin JS patterns, no external dependency
+- [Phase 01-settings-telegram-webhook-pipeline]: Processing order follows flows.json exactly: shortlink resolution BEFORE main dispatch
+- [Phase 01-settings-telegram-webhook-pipeline]: build_affiliate_url uses simple ?tag= format (not extended REST controller format with linkCode/th/psc)
+- [Phase 01-settings-telegram-webhook-pipeline]: require_once ordering: tracking-registry, url-resolver, telegram-handler must precede plugin.php
 
 ### Pending Todos
 
@@ -72,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T00:31:27.588Z
-Stopped at: Completed 01-03 Task 1; awaiting human-verify checkpoint (Task 2)
+Last session: 2026-03-25T00:33:59.944Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
