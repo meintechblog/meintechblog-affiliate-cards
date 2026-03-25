@@ -13,6 +13,7 @@
     const Button = components.Button;
     const TOKEN_PATTERN = /^amazon:([A-Z0-9]{10})$/;
     const HYDRATION_ENDPOINT = 'mtb-affiliate-cards/v1/item';
+    const PRODUCTS_ENDPOINT = 'mtb-affiliate-cards/v1/products';
     const BADGE_OPTIONS = [
         { label: 'Automatisch', value: 'auto' },
         { label: 'Im Video verwendet', value: 'video' },
@@ -328,6 +329,29 @@
         const hasError = attributes.loadState === 'error';
         const currentAsin = item.asin ? String( item.asin ).trim().toUpperCase() : '';
         const hydrationAsinRef = useRef( currentAsin );
+        const [ products, setProducts ] = element.useState( [] );
+        const [ productsLoaded, setProductsLoaded ] = element.useState( false );
+
+        useEffect( function () {
+            if ( productsLoaded ) { return; }
+            var root = ( window.wpApiSettings && window.wpApiSettings.root )
+                ? window.wpApiSettings.root.replace( /\/+$/, '' )
+                : '/wp-json';
+            var headers = {};
+            if ( window.wpApiSettings && window.wpApiSettings.nonce ) {
+                headers[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce;
+            }
+            window.fetch( root + '/' + PRODUCTS_ENDPOINT + '?limit=50', {
+                credentials: 'same-origin',
+                headers: headers
+            } )
+                .then( function ( r ) { return r.ok ? r.json() : []; } )
+                .then( function ( data ) {
+                    setProducts( Array.isArray( data ) ? data : [] );
+                    setProductsLoaded( true );
+                } )
+                .catch( function () { setProductsLoaded( true ); } );
+        }, [] );
 
         function updateItem( key, value ) {
             props.setAttributes( {
