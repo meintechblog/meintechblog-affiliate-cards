@@ -344,54 +344,58 @@
                             }
 
                             if ( shorthandIsInline ) {
-                                /* Inline: replace token with affiliate link */
-                                var product = products[ 0 ];
-                                var pAsin = String( product.asin || '' ).toUpperCase();
-                                var pTitle = product.title && product.title !== pAsin ? product.title : '';
-                                var pDetailUrl = product.detail_url || 'https://www.amazon.de/dp/' + pAsin;
+                                /* Inline: replace token with ALL product links (space-separated) */
+                                /* For products without title, hydrate from Amazon API first */
+                                var inlinePostId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
+                                var needsHydration = products.some( function ( p ) {
+                                    var a = String( p.asin || '' ).toUpperCase();
+                                    return ! p.title || p.title === a;
+                                } );
 
-                                /* If no title from library, fetch from hydration API (Amazon lookup) */
-                                if ( ! pTitle ) {
-                                    var hPostId = postSelect && postSelect.getCurrentPostId ? postSelect.getCurrentPostId() : 0;
-                                    var hUrl2 = buildHydrationUrl( pAsin, hPostId );
-                                    var hHdr2 = {};
-                                    if ( window.wpApiSettings && window.wpApiSettings.nonce ) { hHdr2[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce; }
-                                    fetch( hUrl2, { credentials: 'same-origin', headers: hHdr2 } )
-                                        .then( function ( r ) { return r.ok ? r.json() : null; } )
-                                        .then( function ( payload ) {
-                                            var title = payload && payload.title ? payload.title : pAsin;
-                                            var detUrl = payload && payload.detailUrl ? payload.detailUrl : pDetailUrl;
-                                            if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
-                                            var lnk = '<a href="' + detUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
-                                            var lb = editorSelect.getBlock( shorthandBlock.clientId );
-                                            if ( ! lb ) { return; }
-                                            var cc = String( lb.attributes && lb.attributes.content || '' );
-                                            editorDispatch.updateBlockAttributes( shorthandBlock.clientId, {
-                                                content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, lnk )
-                                            } );
-                                            showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
-                                        } )
-                                        .catch( function () {
-                                            /* Fallback: use ASIN as link text */
-                                            var lnk = '<a href="' + pDetailUrl + '" rel="nofollow noopener sponsored">' + pAsin + '</a> (Affiliate-Link)';
-                                            var lb = editorSelect.getBlock( shorthandBlock.clientId );
-                                            if ( ! lb ) { return; }
-                                            var cc = String( lb.attributes && lb.attributes.content || '' );
-                                            editorDispatch.updateBlockAttributes( shorthandBlock.clientId, {
-                                                content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, lnk )
-                                            } );
-                                        } );
+                                function buildInlineLinks( resolvedProducts ) {
+                                    var links = resolvedProducts.map( function ( p ) {
+                                        var a = String( p.asin || '' ).toUpperCase();
+                                        var t = p.title && p.title !== a ? p.title : a;
+                                        var u = p.detail_url || 'https://www.amazon.de/dp/' + a;
+                                        if ( t.length > 60 ) { t = t.substring( 0, 60 ) + '\u2026'; }
+                                        return '<a href="' + u + '" rel="nofollow noopener sponsored">' + t + '</a> (Affiliate-Link)';
+                                    } );
+                                    var lb = editorSelect.getBlock( shorthandBlock.clientId );
+                                    if ( ! lb ) { return; }
+                                    var cc = String( lb.attributes && lb.attributes.content || '' );
+                                    editorDispatch.updateBlockAttributes( shorthandBlock.clientId, {
+                                        content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, links.join( ' ' ) )
+                                    } );
+                                    showNotice( resolvedProducts.length + ' Affiliate-Link(s) eingefuegt', 'success' );
+                                }
+
+                                if ( ! needsHydration ) {
+                                    buildInlineLinks( products );
                                     return;
                                 }
 
-                                if ( pTitle.length > 60 ) { pTitle = pTitle.substring( 0, 60 ) + '\u2026'; }
-                                var linkHtml = '<a href="' + pDetailUrl + '" rel="nofollow noopener sponsored">' + pTitle + '</a> (Affiliate-Link)';
-                                var liveBlock = editorSelect.getBlock( shorthandBlock.clientId );
-                                if ( ! liveBlock ) { return; }
-                                var curContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
-                                var newContent = curContent.replace( /amazon:(last|heute|today|gestern|yesterday)/i, linkHtml );
-                                editorDispatch.updateBlockAttributes( shorthandBlock.clientId, { content: newContent } );
-                                showNotice( 'Affiliate-Link eingefuegt: ' + pTitle, 'success' );
+                                /* Hydrate missing titles via Amazon API */
+                                var hydratePromises = products.map( function ( p ) {
+                                    var a = String( p.asin || '' ).toUpperCase();
+                                    if ( p.title && p.title !== a ) {
+                                        return Promise.resolve( p );
+                                    }
+                                    var hUrl3 = buildHydrationUrl( a, inlinePostId );
+                                    var hHdr3 = {};
+                                    if ( window.wpApiSettings && window.wpApiSettings.nonce ) { hHdr3[ 'X-WP-Nonce' ] = window.wpApiSettings.nonce; }
+                                    return fetch( hUrl3, { credentials: 'same-origin', headers: hHdr3 } )
+                                        .then( function ( r ) { return r.ok ? r.json() : null; } )
+                                        .then( function ( payload ) {
+                                            return {
+                                                asin: a,
+                                                title: payload && payload.title ? payload.title : a,
+                                                detail_url: payload && payload.detailUrl ? payload.detailUrl : p.detail_url || ''
+                                            };
+                                        } )
+                                        .catch( function () { return p; } );
+                                } );
+
+                                Promise.all( hydratePromises ).then( buildInlineLinks );
                                 return;
                             }
 
