@@ -11,7 +11,7 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 - [ ] **TGBOT-01**: Plugin empfaengt Telegram-Nachrichten via Webhook und validiert Secret-Token
 - [ ] **TGBOT-02**: Bot antwortet mit fertigem Affiliate-Link (ASIN + aktuelle Tracking-ID)
-- [ ] **TGBOT-03**: Bot loest ShortURLs auf (amzn.to / amzn.eu) und extrahiert ASIN
+- [x] **TGBOT-03**: Bot loest ShortURLs auf (amzn.to / amzn.eu) und extrahiert ASIN
 - [ ] **TGBOT-04**: Bot akzeptiert direkte ASINs (B0XXXXXXXX) und Amazon-Produkt-URLs
 - [ ] **TGBOT-05**: User kann Tracking-ID per Datum setzen (heute, YYMMDD, DD.MM.YY/YYYY)
 - [ ] **TGBOT-06**: User kann Tracking-ID per "reset" auf Default zuruecksetzen
@@ -42,7 +42,7 @@ Requirements for Telegram-to-WordPress Affiliate Pipeline. Each maps to roadmap 
 
 - [x] **SETT-01**: Bot-Token ist in Plugin-Settings konfigurierbar
 - [x] **SETT-02**: Chat-ID ist als optionales Feld in Plugin-Settings konfigurierbar
-- [ ] **SETT-03**: Webhook-Status (aktiv/inaktiv) wird in Settings angezeigt
+- [x] **SETT-03**: Webhook-Status (aktiv/inaktiv) wird in Settings angezeigt
 
 ## v2 Requirements
 
@@ -77,7 +77,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | TGBOT-01 | Phase 1 | Pending |
 | TGBOT-02 | Phase 1 | Pending |
-| TGBOT-03 | Phase 1 | Pending |
+| TGBOT-03 | Phase 1 | Complete |
 | TGBOT-04 | Phase 1 | Pending |
 | TGBOT-05 | Phase 1 | Pending |
 | TGBOT-06 | Phase 1 | Pending |
@@ -96,7 +96,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRID-04 | Phase 1 | Pending |
 | SETT-01 | Phase 1 | Complete |
 | SETT-02 | Phase 1 | Complete |
-| SETT-03 | Phase 1 | Pending |
+| SETT-03 | Phase 1 | Complete |
 
 **Coverage:**
 - v1.0 requirements: 22 total

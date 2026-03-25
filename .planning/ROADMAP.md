@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Foundation: Settings extension + Tracking Registry + URL Resolver
 - [ ] 01-02-PLAN.md — Core: Telegram Handler dispatch logic + webhook endpoint + plugin wiring
-- [ ] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
+- [x] 01-03-PLAN.md — UI: Telegram Bot settings tab + webhook status check
 **UI hint**: yes
 
 ### Phase 2: Product Library + Tracking-ID Registry
