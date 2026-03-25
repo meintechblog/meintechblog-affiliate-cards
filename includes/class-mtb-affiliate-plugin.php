@@ -100,9 +100,12 @@ final class MTB_Affiliate_Plugin {
             <nav class="nav-tab-wrapper">
                 <a class="nav-tab <?php echo $tab === 'settings' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=settings">Einstellungen</a>
                 <a class="nav-tab <?php echo $tab === 'audit' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=audit">Affiliate Audit</a>
+                <a class="nav-tab <?php echo $tab === 'telegram' ? 'nav-tab-active' : ''; ?>" href="?page=mtb-affiliate-cards&tab=telegram">Telegram Bot</a>
             </nav>
             <?php if ($tab === 'audit') : ?>
                 <?php $this->render_audit_tab(); ?>
+            <?php elseif ($tab === 'telegram') : ?>
+                <?php $this->render_telegram_tab(); ?>
             <?php else : ?>
                 <form method="post" action="options.php">
                     <?php if (function_exists('settings_fields')) : ?>
@@ -252,6 +255,100 @@ final class MTB_Affiliate_Plugin {
                 </tbody>
             </table>
         </div>
+        <?php
+    }
+
+    private function render_telegram_tab(): void {
+        $settings = $this->settings->get_all();
+        $optionName = $this->settings->option_name();
+        $webhookUrl = function_exists('rest_url') ? rest_url('mtb-affiliate-cards/v1/telegram') : '';
+        $ajaxUrl = function_exists('admin_url') ? admin_url('admin-ajax.php') : '';
+        $nonce = function_exists('wp_create_nonce') ? wp_create_nonce('mtb_webhook_status_check') : '';
+        ?>
+        <form method="post" action="options.php">
+            <?php if (function_exists('settings_fields')) : ?>
+                <?php settings_fields($this->settings->settings_group()); ?>
+            <?php endif; ?>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><label for="mtb-bot-token">Bot-Token</label></th>
+                    <td><input id="mtb-bot-token" type="password" class="regular-text code" name="<?php echo esc_attr($optionName); ?>[telegram_bot_token]" value="<?php echo esc_attr($settings['telegram_bot_token']); ?>" autocomplete="new-password"></td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="mtb-chat-id">Chat-ID <small>(optional)</small></label></th>
+                    <td>
+                        <input id="mtb-chat-id" type="text" class="regular-text code" name="<?php echo esc_attr($optionName); ?>[telegram_chat_id]" value="<?php echo esc_attr($settings['telegram_chat_id']); ?>">
+                        <p class="description">Nur Nachrichten von dieser Chat-ID verarbeiten. Leer = alle erlauben.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="mtb-webhook-secret">Webhook-Secret</label></th>
+                    <td>
+                        <input id="mtb-webhook-secret" type="text" class="regular-text code" name="<?php echo esc_attr($optionName); ?>[telegram_webhook_secret]" value="<?php echo esc_attr($settings['telegram_webhook_secret']); ?>" readonly>
+                        <p class="description">Wird automatisch generiert. Bei setWebhook als <code>secret_token</code> Parameter angeben.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Webhook-URL</th>
+                    <td>
+                        <input type="text" class="regular-text code" value="<?php echo esc_attr($webhookUrl); ?>" readonly>
+                        <p class="description">Diese URL bei Telegram <code>setWebhook</code> registrieren.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Webhook-Status</th>
+                    <td>
+                        <span id="mtb-webhook-status-badge" style="display:inline-block;padding:3px 10px;border-radius:3px;background:#999;color:#fff;font-size:13px;">Unbekannt</span>
+                        <button type="button" id="mtb-check-webhook-btn" class="button" style="margin-left:8px;">Status pruefen</button>
+                        <span id="mtb-webhook-status-detail" style="margin-left:8px;color:#666;"></span>
+                    </td>
+                </tr>
+            </table>
+            <?php if (function_exists('submit_button')) : ?>
+                <?php submit_button('Einstellungen speichern'); ?>
+            <?php endif; ?>
+        </form>
+        <script>
+        (function() {
+            var btn = document.getElementById('mtb-check-webhook-btn');
+            var badge = document.getElementById('mtb-webhook-status-badge');
+            var detail = document.getElementById('mtb-webhook-status-detail');
+            if (!btn) return;
+            btn.addEventListener('click', function() {
+                btn.disabled = true;
+                badge.textContent = 'Pruefe...';
+                badge.style.background = '#999';
+                detail.textContent = '';
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '<?php echo esc_js($ajaxUrl); ?>');
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function() {
+                    btn.disabled = false;
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if (data.active) {
+                            badge.textContent = 'Aktiv';
+                            badge.style.background = '#46b450';
+                            detail.textContent = 'Pending: ' + (data.pending || 0);
+                        } else {
+                            badge.textContent = 'Inaktiv';
+                            badge.style.background = '#dc3232';
+                            detail.textContent = data.error || 'Kein Webhook registriert.';
+                        }
+                    } catch(e) {
+                        badge.textContent = 'Fehler';
+                        badge.style.background = '#dc3232';
+                    }
+                };
+                xhr.onerror = function() {
+                    btn.disabled = false;
+                    badge.textContent = 'Fehler';
+                    badge.style.background = '#dc3232';
+                };
+                xhr.send('action=mtb_check_webhook_status&nonce=<?php echo esc_js($nonce); ?>');
+            });
+        })();
+        </script>
         <?php
     }
 
@@ -594,7 +691,7 @@ final class MTB_Affiliate_Plugin {
 
     private function current_admin_tab(): string {
         $tab = trim((string) ($_GET['tab'] ?? 'settings'));
-        return in_array($tab, ['settings', 'audit'], true) ? $tab : 'settings';
+        return in_array($tab, ['settings', 'audit', 'telegram'], true) ? $tab : 'settings';
     }
 
     private function filter_audit_rows(array $rows, string $search, string $statusFilter): array {
