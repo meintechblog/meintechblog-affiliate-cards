@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Klick-Tracking pro Affiliate-Link pro Beitrag: neue Klasse `MTB_Affiliate_Click_Tracker` (Tabelle `mtb_affiliate_clicks`, Tages-Buckets, kein PII), zählt via `navigator.sendBeacon` ohne Redirect — der DOM-Link bleibt eine direkte amazon.de-URL (kein Cloaking, kein Single-Point-of-Failure, migrationsfest)
+- REST: `POST /mtb-affiliate-cards/v1/click` (öffentlich, strenge ASIN-/Post-Validierung, Per-IP-Rate-Limit, atomarer `INSERT … ON DUPLICATE KEY UPDATE`) + `GET /mtb-affiliate-cards/v1/clicks` (auth, aggregiert für Web-App/Agent)
+- Front-End-Beacon `assets/click-beacon.js` (delegierter click/auxclick-Listener auf amazon /dp/-Links, fire-and-forget)
+- Tests: `tests/test-click-tracker.php`
+
 ## 0.2.30
 
 - hydriert manuell eingefuegte Affiliate Cards jetzt automatisch, sobald eine gueltige ASIN eingetragen wird

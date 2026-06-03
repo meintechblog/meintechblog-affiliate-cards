@@ -18,6 +18,7 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Tracking_Registry $trackingRegistry;
     private MTB_Affiliate_Url_Resolver $urlResolver;
     private MTB_Affiliate_Telegram_Handler $telegramHandler;
+    private MTB_Affiliate_Click_Tracker $clickTracker;
 
     private function __construct() {
         $this->settings         = new MTB_Affiliate_Settings();
@@ -33,6 +34,7 @@ final class MTB_Affiliate_Plugin {
             $this->productLibrary
         );
         $this->block          = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
+        $this->clickTracker   = new MTB_Affiliate_Click_Tracker();
         $this->restController = new MTB_Affiliate_Rest_Controller(
             $this->settings,
             $this->amazonClient,
@@ -61,6 +63,8 @@ final class MTB_Affiliate_Plugin {
         add_action('init', [$this, 'register_assets']);
         add_action('init', [$this->block, 'register']);
         add_action('rest_api_init', [$this->restController, 'register_routes']);
+        add_action('rest_api_init', [$this->clickTracker, 'register_routes']);
+        add_action('wp_enqueue_scripts', [$this->clickTracker, 'enqueue_frontend']);
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
         add_action('save_post', [$this, 'handle_save_post_sync_library'], 30, 2);
         add_action('admin_post_mtb_affiliate_audit', [$this, 'handle_audit_admin_post']);
@@ -72,6 +76,7 @@ final class MTB_Affiliate_Plugin {
         $settings->save($settings->defaults());
         MTB_Affiliate_Tracking_Registry::create_table();
         MTB_Affiliate_Product_Library::create_table();
+        MTB_Affiliate_Click_Tracker::create_table();
     }
 
     public function ajax_check_webhook_status(): void {
