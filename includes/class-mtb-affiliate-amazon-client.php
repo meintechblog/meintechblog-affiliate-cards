@@ -113,6 +113,161 @@ final class MTB_Affiliate_Amazon_Client {
         return array_map(fn(array $item): array => $this->map_item($item), $items);
     }
 
+    /**
+     * Non-throwing availability probe for the dead-link checker. Unlike get_items() this
+     * surfaces an HTTP-status-driven auth state, per-ASIN errors, and a POSITIVE offers-presence
+     * signal — so the checker can tell account-wide auth failure from a transient error from a
+     * real "no offer" (Codex-Refute RC1/RC2/RC3, 2026-06-03). Never throws.
+     *
+     * @return array{auth_state:string,http_status:int,items:array,errors:array,raw_errors:array,raw:?array}
+     */
+    public function classify_items(array $asins, array $context, bool $debug = false): array {
+        $out = [
+            'auth_state'  => 'ok',
+            'http_status' => 0,
+            'items'       => [],
+            'errors'      => [],
+            'raw_errors'  => [],
+            'raw'         => null,
+        ];
+
+        $asins        = array_values(array_filter(array_unique(array_map('strval', $asins))));
+        $clientId     = trim((string) ($context['client_id'] ?? ''));
+        $clientSecret = trim((string) ($context['client_secret'] ?? ''));
+        $partnerTag   = trim((string) ($context['partner_tag'] ?? ''));
+        $marketplace  = trim((string) ($context['marketplace'] ?? 'www.amazon.de'));
+
+        // RC2: stub/config guard — never classify against a stub/placeholder response.
+        if ($asins === [] || $clientId === '' || $clientSecret === '' || $partnerTag === '') {
+            $out['auth_state'] = 'config_error';
+            return $out;
+        }
+
+        // RC1: token failure = account-wide auth problem.
+        try {
+            $token = $this->get_access_token($clientId, $clientSecret);
+        } catch (\Throwable $e) {
+            $out['auth_state'] = 'token_failed';
+            return $out;
+        }
+
+        try {
+            [$status, $payload] = $this->request(
+                'POST',
+                self::CATALOG_URL,
+                [
+                    'Authorization' => 'Bearer ' . $token,
+                    'Content-Type'  => 'application/json',
+                    'x-marketplace' => $marketplace,
+                ],
+                [
+                    'itemIds'     => $asins,
+                    'itemIdType'  => 'ASIN',
+                    'marketplace' => $marketplace,
+                    'partnerTag'  => $partnerTag,
+                    'resources'   => [
+                        'images.primary.medium',
+                        'itemInfo.title',
+                        'offersV2.listings.price',
+                    ],
+                ]
+            );
+        } catch (\Throwable $e) {
+            $out['auth_state'] = 'transient_error'; // network / WP_Error
+            return $out;
+        }
+
+        $out['http_status'] = (int) $status;
+
+        // RC1: HTTP-status-driven auth/transient split.
+        if ($status === 401 || $status === 403) {
+            $out['auth_state'] = 'access_revoked';
+            return $out;
+        }
+        if ($status === 429) {
+            $out['auth_state'] = 'rate_limited';
+            return $out;
+        }
+        if ($status !== 200) {
+            $out['auth_state'] = 'transient_error';
+            return $out;
+        }
+
+        if ($debug) {
+            $out['raw'] = $payload;
+        }
+
+        $items = $payload['itemsResult']['items'] ?? $payload['itemResults']['items'] ?? [];
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $asin = strtoupper((string) ($item['asin'] ?? ''));
+            if ($asin === '') {
+                continue;
+            }
+            $offersNode    = $item['offersV2'] ?? null;
+            $offersPresent = is_array($offersNode);
+            $listings      = ($offersPresent && isset($offersNode['listings']) && is_array($offersNode['listings']))
+                ? $offersNode['listings'] : [];
+            $out['items'][$asin] = [
+                'title'          => (string) ($item['itemInfo']['title']['displayValue'] ?? ''),
+                'image_url'      => (string) ($this->resolve_image_urls($item['images'] ?? [])[0] ?? ''),
+                'detail_url'     => (string) ($item['detailPageURL'] ?? ('https://www.amazon.de/dp/' . $asin)),
+                'price_text'     => $this->extract_price_text($listings),
+                'offers_present' => $offersPresent,
+            ];
+        }
+
+        // Errors keyed per-ASIN where resolvable; never invent not_found from request-level errors (RC3).
+        $rawErrors = $payload['errors'] ?? $payload['itemsResult']['errors'] ?? [];
+        if (is_array($rawErrors)) {
+            $out['raw_errors'] = $rawErrors;
+            foreach ($rawErrors as $err) {
+                if (! is_array($err)) {
+                    continue;
+                }
+                $code = (string) ($err['code'] ?? $err['Code'] ?? '');
+                $asin = strtoupper((string) ($err['asin'] ?? $err['itemId'] ?? $err['ItemId'] ?? ''));
+                if (! preg_match('/^[A-Z0-9]{10}$/', $asin)) {
+                    $msg = strtoupper((string) ($err['message'] ?? $err['Message'] ?? ''));
+                    if (preg_match('/\b([A-Z0-9]{10})\b/', $msg, $m)) {
+                        $asin = $m[1];
+                    } else {
+                        continue; // unresolvable → request-level, do NOT map to not_found
+                    }
+                }
+                if ($code !== '') {
+                    $out['errors'][$asin] = $code;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    private function extract_price_text(array $listings): ?string {
+        foreach ($listings as $listing) {
+            if (! is_array($listing)) {
+                continue;
+            }
+            $candidates = [
+                $listing['price']['displayAmount'] ?? null,
+                $listing['price']['money']['displayAmount'] ?? null,
+                $listing['price']['amount'] ?? null,
+            ];
+            foreach ($candidates as $p) {
+                if (is_string($p) && $p !== '') {
+                    return $p;
+                }
+                if (is_int($p) || is_float($p)) {
+                    return (string) $p;
+                }
+            }
+        }
+        return null;
+    }
+
     private function get_access_token(string $clientId, string $clientSecret): string {
         if ($this->accessToken !== null) {
             return $this->accessToken;

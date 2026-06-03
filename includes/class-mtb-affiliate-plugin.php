@@ -19,6 +19,7 @@ final class MTB_Affiliate_Plugin {
     private MTB_Affiliate_Url_Resolver $urlResolver;
     private MTB_Affiliate_Telegram_Handler $telegramHandler;
     private MTB_Affiliate_Click_Tracker $clickTracker;
+    private MTB_Affiliate_Availability_Checker $availabilityChecker;
 
     private function __construct() {
         $this->settings         = new MTB_Affiliate_Settings();
@@ -35,6 +36,11 @@ final class MTB_Affiliate_Plugin {
         );
         $this->block          = new MTB_Affiliate_Block($this->settings, $this->amazonClient);
         $this->clickTracker   = new MTB_Affiliate_Click_Tracker();
+        $this->availabilityChecker = new MTB_Affiliate_Availability_Checker(
+            $this->amazonClient,
+            $this->settings,
+            $this->auditService
+        );
         $this->restController = new MTB_Affiliate_Rest_Controller(
             $this->settings,
             $this->amazonClient,
@@ -62,6 +68,7 @@ final class MTB_Affiliate_Plugin {
         // Single-flight + transient lock so only one request pays dbDelta — never a per-request
         // storm or a CREATE-TABLE race under concurrent first-hits (Codex-Refute MAJOR 2026-06-03).
         MTB_Affiliate_Click_Tracker::maybe_upgrade();
+        MTB_Affiliate_Availability_Checker::maybe_upgrade();
 
         add_action('admin_menu', [$this, 'register_settings_page']);
         add_action( 'admin_menu', [ $this, 'register_product_library_menu' ] );
@@ -71,6 +78,11 @@ final class MTB_Affiliate_Plugin {
         add_action('rest_api_init', [$this->restController, 'register_routes']);
         add_action('rest_api_init', [$this->clickTracker, 'register_routes']);
         add_action('wp_enqueue_scripts', [$this->clickTracker, 'enqueue_frontend']);
+        add_action('rest_api_init', [$this->availabilityChecker, 'register_routes']);
+        add_filter('cron_schedules', [$this->availabilityChecker, 'add_cron_schedule']);
+        add_action(MTB_Affiliate_Availability_Checker::KICKOFF_HOOK, [$this->availabilityChecker, 'kickoff']);
+        add_action(MTB_Affiliate_Availability_Checker::TICK_HOOK, [$this->availabilityChecker, 'tick']);
+        $this->availabilityChecker->ensure_scheduled();
         add_action('save_post', [$this, 'handle_save_post'], 20, 3);
         add_action('save_post', [$this, 'handle_save_post_sync_library'], 30, 2);
         add_action('admin_post_mtb_affiliate_audit', [$this, 'handle_audit_admin_post']);
@@ -83,6 +95,7 @@ final class MTB_Affiliate_Plugin {
         MTB_Affiliate_Tracking_Registry::create_table();
         MTB_Affiliate_Product_Library::create_table();
         MTB_Affiliate_Click_Tracker::create_table();
+        MTB_Affiliate_Availability_Checker::create_table();
     }
 
     public function ajax_check_webhook_status(): void {

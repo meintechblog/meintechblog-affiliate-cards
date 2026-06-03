@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+- Verfügbarkeits-Checker (Dead-Link-Marker, Affiliate-System Baustein 2): neue Klasse `MTB_Affiliate_Availability_Checker` (Tabelle `mtb_affiliate_availability`, EINE Quelle der Wahrheit pro ASIN). Prüft Affiliate-ASINs periodisch server-seitig über die Creators-API und klassifiziert: `available` / `unavailable_temp` / `not_found` / `api_inaccessible` / `error` / `replaced`.
+- Neue, NICHT-werfende Client-Methode `MTB_Affiliate_Amazon_Client::classify_items()` mit HTTP-status-getriebenem Auth-Signal (token_failed / access_revoked / rate_limited / transient_error) — trennt account-weiten Auth-Fail hart vom per-ASIN-Fehler (Account-Problem bricht den Scan ab + alarmiert, statt 988 ASINs fälschlich „verdächtig" zu schreiben).
+- Klassifikation positiv-bestätigt (Codex-Refute): nur `offersV2` vorhanden+leer → `unavailable_temp`; Offers abwesend/unparsebar → `error` (retry, letzter guter Status bleibt) — ein Parser-Shape-Mismatch kann keine lebenden Produkte massenhaft als tot markieren. `not_found` nur aus per-ASIN `InvalidParameterValue`. Hysterese: „kein Offer" wird erst nach ≥3 aufeinanderfolgenden Scans Reparatur-Kandidat.
+- Resumabler gechunkter WP-Cron (1 Batch ≤10 ASINs/Tick, Cursor, Options-Lock mit Stale-Reclaim-Watchdog, idempotenter Kickoff, 429-Backoff, Canary-/Stub-Guard auf bekannt-lebenden ASIN). Wöchentlich, self-scheduling nach FTP-Update.
+- REST: `GET /availability` (auth, Filter `status`/`repair`), `GET /availability/posts?repair=1` (Query-Zeit-JOIN — welche Posts toten ASIN enthalten, kein Roll-up-Cache), `POST /availability/scan` (auth; synchrone Eich-Stichprobe mit `asins`+`debug`, oder Cron-Kickoff).
+- ASIN-Quelle = bestehender Audit-Extractor (`scan_post_content`) über publizierte Posts (eine Quelle, deckt Marker + /dp/-Links inkl. Card-Block).
+- Tests: `tests/test-availability-checker.php` (Auth-State-Machine, 5 Klassen, Hysterese-Übergänge, „error behält guten Status", „replaced terminal").
+- Hinweis: Karten-Anzeige von Preis + „Stand: <Zeit>" und der human-gated Repair-Loop sind bewusst Folge-Schritte (eigener Codex-Refute), siehe `docs/DESIGN-availability-checker.md`.
+
 ## 0.3.1
 
 - Klick-Tracking-Tabellen-Upgrade gehärtet (Codex-Refute vor Live-Deploy): `maybe_upgrade()` mit Transient-Single-Flight-Lock ersetzt den ungeschützten `needs_upgrade()`/`create_table()`-Aufruf im `boot()`-Pfad — verhindert eine `CREATE TABLE`-Race und einen `dbDelta`-Sturm (wiederholtes Laden von `wp-admin/includes/upgrade.php` auf jedem Frontend-Request bei persistentem Object-Cache). Selbstheilend: erneuter Versuch beim nächsten Request, falls der Lock-Halter vor dem Setzen der Version-Option scheitert.
