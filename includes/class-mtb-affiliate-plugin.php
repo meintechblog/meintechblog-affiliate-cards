@@ -59,9 +59,9 @@ final class MTB_Affiliate_Plugin {
 
         // Ensure the clicks table exists after a plain file-update (create_table otherwise
         // only runs on the activation hook, which a FTP/git deploy does not trigger).
-        if (MTB_Affiliate_Click_Tracker::needs_upgrade()) {
-            MTB_Affiliate_Click_Tracker::create_table();
-        }
+        // Single-flight + transient lock so only one request pays dbDelta — never a per-request
+        // storm or a CREATE-TABLE race under concurrent first-hits (Codex-Refute MAJOR 2026-06-03).
+        MTB_Affiliate_Click_Tracker::maybe_upgrade();
 
         add_action('admin_menu', [$this, 'register_settings_page']);
         add_action( 'admin_menu', [ $this, 'register_product_library_menu' ] );

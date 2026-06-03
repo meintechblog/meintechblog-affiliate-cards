@@ -48,6 +48,30 @@ final class MTB_Affiliate_Click_Tracker {
         return get_option(self::DB_VERSION_OPTION, '0') !== self::DB_VERSION;
     }
 
+    /**
+     * Idempotent, single-flight upgrade for the plain file-update path (boot() runs on
+     * every request; create_table only runs on the activation hook a FTP/git deploy does
+     * not fire). A short transient lock ensures only ONE request runs dbDelta — without it
+     * concurrent first-requests would each load wp-admin/includes/upgrade.php and race on
+     * CREATE TABLE (Codex-Refute MAJOR 2026-06-03). Self-healing: re-tries next request if
+     * the lock holder failed before setting the version option.
+     */
+    public static function maybe_upgrade(): void {
+        if (! self::needs_upgrade()) {
+            return;
+        }
+        if (function_exists('get_transient')) {
+            if (get_transient('mtb_clicks_upgrading')) {
+                return; // another request is already creating the table
+            }
+            set_transient('mtb_clicks_upgrading', 1, 30);
+        }
+        self::create_table();
+        if (function_exists('delete_transient')) {
+            delete_transient('mtb_clicks_upgrading');
+        }
+    }
+
     public function table_name(): string {
         global $wpdb;
         return $wpdb->prefix . self::TABLE_SUFFIX;

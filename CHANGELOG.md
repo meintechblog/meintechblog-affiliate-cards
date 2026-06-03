@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Klick-Tracking-Tabellen-Upgrade gehärtet (Codex-Refute vor Live-Deploy): `maybe_upgrade()` mit Transient-Single-Flight-Lock ersetzt den ungeschützten `needs_upgrade()`/`create_table()`-Aufruf im `boot()`-Pfad — verhindert eine `CREATE TABLE`-Race und einen `dbDelta`-Sturm (wiederholtes Laden von `wp-admin/includes/upgrade.php` auf jedem Frontend-Request bei persistentem Object-Cache). Selbstheilend: erneuter Versuch beim nächsten Request, falls der Lock-Halter vor dem Setzen der Version-Option scheitert.
+
 ## 0.3.0
 
 - Klick-Tracking pro Affiliate-Link pro Beitrag: neue Klasse `MTB_Affiliate_Click_Tracker` (Tabelle `mtb_affiliate_clicks`, Tages-Buckets, kein PII), zählt via `navigator.sendBeacon` ohne Redirect — der DOM-Link bleibt eine direkte amazon.de-URL (kein Cloaking, kein Single-Point-of-Failure, migrationsfest)
