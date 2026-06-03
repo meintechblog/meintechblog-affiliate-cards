@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- Verfügbarkeits-Klassifikation korrigiert (Eich-Stichprobe gegen die Live-Creators-API, 2026-06-03): Verfügbarkeit hängt jetzt am Vorhandensein eines **Listings**, NICHT am Preis. Ein lebendes BuyBox-Produkt kann ein Listing ohne Preis liefern (MAP „Preis erst im Warenkorb" — live am Canary B07ZQMG51R bestätigt). Vorher wurden solche Produkte fälschlich `unavailable_temp`. Neu: `has_listing` (Listings nicht-leer) → `available`; Offers-Node vorhanden aber Listings leer → `unavailable_temp`; Preis bleibt optionale Metadaten. (Genau die von Codex-Refute RC3 vorhergesagte Shape-Falle, vom Eich-Gate gefangen — der Canary-Guard hätte den echten Scan ohnehin abgebrochen.)
+
 ## 0.4.0
 
 - Verfügbarkeits-Checker (Dead-Link-Marker, Affiliate-System Baustein 2): neue Klasse `MTB_Affiliate_Availability_Checker` (Tabelle `mtb_affiliate_availability`, EINE Quelle der Wahrheit pro ASIN). Prüft Affiliate-ASINs periodisch server-seitig über die Creators-API und klassifiziert: `available` / `unavailable_temp` / `not_found` / `api_inaccessible` / `error` / `replaced`.

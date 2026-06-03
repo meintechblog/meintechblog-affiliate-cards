@@ -120,6 +120,8 @@ assert_true($r['auth_state'] === 'transient_error', 'catalog 5xx -> transient_er
 $payload = ['itemsResult' => ['items' => [
     ['asin' => 'B07ZQMG51R', 'itemInfo' => ['title' => ['displayValue' => 'DS18B20']],
      'offersV2' => ['listings' => [['price' => ['displayAmount' => '9,99 €']]]]],
+    ['asin' => 'BNOPRICE01', 'itemInfo' => ['title' => ['displayValue' => 'BuyBox, no price (MAP)']],
+     'offersV2' => ['listings' => [['isBuyBoxWinner' => true]]]], // live listing, NO price (real canary case)
     ['asin' => 'BSOLDOUT01', 'itemInfo' => ['title' => ['displayValue' => 'Sold out']],
      'offersV2' => ['listings' => []]],                       // offers present, empty
     ['asin' => 'BNOOFFER01', 'itemInfo' => ['title' => ['displayValue' => 'No offers node']]], // offers absent
@@ -129,11 +131,12 @@ $payload['errors'] = [
     ['code' => 'ItemNotAccessible',     'message' => 'B0BLOCK0AA is not accessible via the API'],
 ];
 $c = make_client($okToken, [200, $payload]);
-$r = $c->classify_items(['B07ZQMG51R', 'BSOLDOUT01', 'BNOOFFER01', 'BTYPO00000', 'B0BLOCK0AA'], $ctx, true);
+$r = $c->classify_items(['B07ZQMG51R', 'BNOPRICE01', 'BSOLDOUT01', 'BNOOFFER01', 'BTYPO00000', 'B0BLOCK0AA'], $ctx, true);
 assert_true($r['auth_state'] === 'ok', 'catalog 200 -> ok');
 assert_true($r['items']['B07ZQMG51R']['price_text'] === '9,99 €', 'price parsed from offersV2.listings.price');
-assert_true($r['items']['B07ZQMG51R']['offers_present'] === true, 'offers_present true when node exists');
-assert_true($r['items']['BSOLDOUT01']['offers_present'] === true && $r['items']['BSOLDOUT01']['price_text'] === null, 'sold-out: offers present, no price');
+assert_true($r['items']['B07ZQMG51R']['has_listing'] === true, 'listing present -> has_listing true');
+assert_true($r['items']['BNOPRICE01']['has_listing'] === true && $r['items']['BNOPRICE01']['price_text'] === null, 'live listing w/o price: has_listing true, price null');
+assert_true($r['items']['BSOLDOUT01']['offers_present'] === true && $r['items']['BSOLDOUT01']['has_listing'] === false, 'sold-out: offers present, listings empty -> has_listing false');
 assert_true($r['items']['BNOOFFER01']['offers_present'] === false, 'no offers node -> offers_present false');
 assert_true(($r['errors']['BTYPO00000'] ?? '') === 'InvalidParameterValue', 'error ASIN recovered from message text');
 assert_true(($r['errors']['B0BLOCK0AA'] ?? '') === 'ItemNotAccessible', 'ItemNotAccessible captured');
@@ -141,8 +144,9 @@ assert_true(($r['errors']['B0BLOCK0AA'] ?? '') === 'ItemNotAccessible', 'ItemNot
 // ============ B) classify_asin() — the 5 classes (RC3) ========================
 $GLOBALS['wpdb'] = new MTB_Fake_Avail_Wpdb();
 $checker = new MTB_Affiliate_Availability_Checker(make_client($okToken, [200, $payload]));
-assert_true($checker->classify_asin('B07ZQMG51R', $r) === 'available', 'available: item + offers + price');
-assert_true($checker->classify_asin('BSOLDOUT01', $r) === 'unavailable_temp', 'unavailable_temp: offers present, no price');
+assert_true($checker->classify_asin('B07ZQMG51R', $r) === 'available', 'available: item + listing + price');
+assert_true($checker->classify_asin('BNOPRICE01', $r) === 'available', 'available: live listing even WITHOUT price (the canary fix)');
+assert_true($checker->classify_asin('BSOLDOUT01', $r) === 'unavailable_temp', 'unavailable_temp: offers present but listings empty');
 assert_true($checker->classify_asin('BNOOFFER01', $r) === 'error', 'offers absent/unparseable -> error (NOT unavailable_temp)');
 assert_true($checker->classify_asin('BTYPO00000', $r) === 'not_found', 'not_found ONLY from InvalidParameterValue');
 assert_true($checker->classify_asin('B0BLOCK0AA', $r) === 'api_inaccessible', 'ItemNotAccessible -> api_inaccessible (never dead)');

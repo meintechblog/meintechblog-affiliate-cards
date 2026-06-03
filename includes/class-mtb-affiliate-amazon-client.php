@@ -216,6 +216,10 @@ final class MTB_Affiliate_Amazon_Client {
                 'detail_url'     => (string) ($item['detailPageURL'] ?? ('https://www.amazon.de/dp/' . $asin)),
                 'price_text'     => $this->extract_price_text($listings),
                 'offers_present' => $offersPresent,
+                // A non-empty listing = a live, buyable offer exists (BuyBox/3rd-party). The PRICE
+                // can be absent on a buyable product (MAP "Preis erst im Warenkorb") — verified live
+                // on the canary B07ZQMG51R — so availability rides on the listing, not the price.
+                'has_listing'    => $offersPresent && is_array($listings) && $listings !== [],
             ];
         }
 

@@ -410,8 +410,11 @@ final class MTB_Affiliate_Availability_Checker {
         if (isset($r['items'][$asin])) {
             $it = $r['items'][$asin];
             if (! empty($it['offers_present'])) {
-                $price = $it['price_text'] ?? null;
-                return ($price !== null && $price !== '') ? 'available' : 'unavailable_temp';
+                // available = a listing exists (buyable). Price is OPTIONAL — a live BuyBox item can
+                // return a listing with no price (MAP "Preis erst im Warenkorb"); verified live on the
+                // canary B07ZQMG51R 2026-06-03. Price must NOT gate availability. Empty listings = no
+                // current offer = unavailable_temp.
+                return ! empty($it['has_listing']) ? 'available' : 'unavailable_temp';
             }
             return 'error'; // item present but offers absent/unparseable → transient, keep last status
         }
