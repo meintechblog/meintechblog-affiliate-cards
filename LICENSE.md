@@ -1,6 +1,6 @@
 # Energy Community License (ECL-1.0)
 
-Copyright (c) 2026 meintechblog
+Copyright (c) 2026 Dr. Jörg Hofmann (meintechblog.de)
 
 Permission is granted to any person or organization to use, copy,
 modify, and distribute this software and its source code, subject to
