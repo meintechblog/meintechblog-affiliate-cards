@@ -298,7 +298,7 @@ if (! str_contains((string) file_get_contents($indexJsPath), 'mtb-affiliate-card
     exit(1);
 }
 
-if (! str_contains((string) file_get_contents($indexJsPath), "href: detailUrl || '#'")) {
+if (! str_contains((string) file_get_contents($indexJsPath), 'href: detailUrl,')) {
     fwrite(STDERR, "Editor CTA should point directly to the Amazon product URL.\n");
     exit(1);
 }

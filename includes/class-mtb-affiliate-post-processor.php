@@ -616,7 +616,7 @@ final class MTB_Affiliate_Post_Processor {
                             $item = $resolvedItems[$asin];
                             $title = trim((string) ($item['title'] ?? ''));
                             $detailUrl = trim((string) ($item['detail_url'] ?? ''));
-                            if ($title === '' || $detailUrl === '') {
+                            if ($title === '' || ! preg_match('~\Ahttps?://~i', $detailUrl)) {
                                 return $token[0];
                             }
                             $linkText = htmlspecialchars($title . ' (Affiliate-Link)', ENT_QUOTES, 'UTF-8');

@@ -23,6 +23,21 @@
     ];
     let isHandlingTokenReplacement = false;
 
+    function httpUrl( value ) {
+        return typeof value === 'string' && /^https?:\/\//i.test( value ) ? value : '';
+    }
+
+    function buildInlineLink( title, url ) {
+        var container = document.createElement( 'span' );
+        var link = document.createElement( 'a' );
+        link.setAttribute( 'href', httpUrl( url ) );
+        link.setAttribute( 'rel', 'nofollow noopener sponsored' );
+        link.textContent = String( title );
+        container.appendChild( link );
+        container.appendChild( document.createTextNode( ' (Affiliate-Link)' ) );
+        return container.innerHTML;
+    }
+
     function showNotice( message, type ) {
         if ( window.wp && window.wp.data && window.wp.data.dispatch( 'core/notices' ) ) {
             window.wp.data.dispatch( 'core/notices' ).createNotice(
@@ -355,16 +370,16 @@
                                 function buildInlineLinks( resolvedProducts ) {
                                     var links = resolvedProducts.map( function ( p ) {
                                         var a = String( p.asin || '' ).toUpperCase();
-                                        var t = p.title && p.title !== a ? p.title : a;
+                                        var t = String( p.title && p.title !== a ? p.title : a );
                                         var u = p.detail_url || 'https://www.amazon.de/dp/' + a;
                                         if ( t.length > 60 ) { t = t.substring( 0, 60 ) + '\u2026'; }
-                                        return '<a href="' + u + '" rel="nofollow noopener sponsored">' + t + '</a> (Affiliate-Link)';
+                                        return buildInlineLink( t, u );
                                     } );
                                     var lb = editorSelect.getBlock( shorthandBlock.clientId );
                                     if ( ! lb ) { return; }
                                     var cc = String( lb.attributes && lb.attributes.content || '' );
                                     editorDispatch.updateBlockAttributes( shorthandBlock.clientId, {
-                                        content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, links.join( ' ' ) )
+                                        content: cc.replace( /amazon:(last|heute|today|gestern|yesterday)/i, function () { return links.join( ' ' ); } )
                                     } );
                                     showNotice( resolvedProducts.length + ' Affiliate-Link(s) eingefuegt', 'success' );
                                 }
@@ -471,14 +486,14 @@
                                 return resp.json();
                             } )
                             .then( function ( payload ) {
-                                var title = payload && payload.title ? payload.title : capturedAsin;
+                                var title = String( payload && payload.title ? payload.title : capturedAsin );
                                 var detailUrl = payload && payload.detailUrl ? payload.detailUrl : 'https://www.amazon.de/dp/' + capturedAsin;
                                 if ( title.length > 60 ) { title = title.substring( 0, 60 ) + '\u2026'; }
-                                var linkHtml = '<a href="' + detailUrl + '" rel="nofollow noopener sponsored">' + title + '</a> (Affiliate-Link)';
+                                var linkHtml = buildInlineLink( title, detailUrl );
                                 var liveBlock = editorSelect.getBlock( capturedClientId );
                                 if ( ! liveBlock ) { return; }
                                 var currentContent = String( liveBlock.attributes && liveBlock.attributes.content || '' );
-                                var newContent = currentContent.replace( /amazon:[A-Za-z0-9]{10}/i, linkHtml );
+                                var newContent = currentContent.replace( /amazon:[A-Za-z0-9]{10}/i, function () { return linkHtml; } );
                                 editorDispatch.updateBlockAttributes( capturedClientId, { content: newContent } );
                                 showNotice( 'Affiliate-Link eingefuegt: ' + title, 'success' );
                             } )
@@ -574,12 +589,12 @@
                 Number.isFinite( attributes.selectedImageIndex ) ? attributes.selectedImageIndex : 0
             )
         );
-        const activeImageUrl = images[ selectedImageIndex ] || item.image_url || '';
+        const activeImageUrl = httpUrl( images[ selectedImageIndex ] || item.image_url || '' );
         const baseTitle = attributes.amazonTitle || item.title || item.asin || 'Neue Karte';
         const previewTitle = item.titleOverride || baseTitle;
         const editableTitle = item.titleOverride || previewTitle;
         const ctaLabel = attributes.ctaLabel || 'Preis auf Amazon checken';
-        const detailUrl = item.detail_url || attributes.detailUrl || '';
+        const detailUrl = httpUrl( item.detail_url || attributes.detailUrl || '' );
         const isLoading = attributes.loadState === 'loading';
         const hasError = attributes.loadState === 'error';
         const currentAsin = item.asin ? String( item.asin ).trim().toUpperCase() : '';
@@ -843,7 +858,7 @@
                                 { className: 'mtb-affiliate-cards-editor__state mtb-affiliate-cards-editor__state--loading' },
                                 el( 'span', { className: 'mtb-affiliate-cards-editor__skeleton mtb-affiliate-cards-editor__skeleton--image' } )
                             ),
-                            ! isLoading && images.length > 0 && el(
+                            ! isLoading && activeImageUrl && el(
                                 'div',
                                 { className: 'mtb-affiliate-cards-editor__image' },
                                 el(
@@ -934,7 +949,7 @@
                                 'a',
                                 {
                                     className: 'mtb-affiliate-cards-editor__cta-preview mtb-affiliate-cards-editor__cta-link',
-                                    href: detailUrl || '#',
+                                    href: detailUrl,
                                     target: '_blank',
                                     rel: 'nofollow noopener sponsored'
                                 },

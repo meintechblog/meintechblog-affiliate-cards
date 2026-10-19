@@ -18,8 +18,8 @@ final class MTB_Affiliate_Renderer {
     private function render_single_card(array $item, string $badgeLabel, string $ctaLabel): string {
         $asin = htmlspecialchars((string) ($item['asin'] ?? ''), ENT_QUOTES, 'UTF-8');
         $title = htmlspecialchars((string) ($item['title'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $imageUrl = htmlspecialchars((string) ($item['image_url'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $detailUrl = htmlspecialchars((string) ($item['detail_url'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $imageUrl = $this->escape_http_url((string) ($item['image_url'] ?? ''));
+        $detailUrl = $this->escape_http_url((string) ($item['detail_url'] ?? ''));
         $benefit = htmlspecialchars((string) ($item['benefit'] ?? ''), ENT_QUOTES, 'UTF-8');
         $badge = htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8');
         $cta = htmlspecialchars($ctaLabel, ENT_QUOTES, 'UTF-8');
@@ -39,6 +39,13 @@ final class MTB_Affiliate_Renderer {
             . $benefitHtml
             . '<a class="mtb-aff-cta" href="' . $detailUrl . '" target="_blank" rel="nofollow noopener sponsored"><span>' . $cta . '</span><span class="mtb-aff-cta-subline">Affiliate-Link</span></a>'
             . '</div></div>';
+    }
+
+    private function escape_http_url(string $url): string {
+        // Validate before escaping so existing HTTP(S) output stays byte-identical.
+        return preg_match('~\Ahttps?://~i', $url)
+            ? htmlspecialchars($url, ENT_QUOTES, 'UTF-8')
+            : '';
     }
 
     private function style_block(): string {
