@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.3
+
+- Vorhandene Partner-Kennungen erhalten; Datums-Kennung nur bei Amazon-Links ohne `tag` ergänzen.
+- Beitragsinhalte mit Backslashes sicher und ohne Hook-Rekursion speichern; bestehende Karten beim Ergänzen neuer Tokens erhalten.
+- Amazon- und Telegram-Einstellungen unabhängig speichern; deaktivierte Checkbox und Webhook-Secret beibehalten.
+
 ## 0.4.2
 
 - Produktdaten pro Marketplace, Partner-Tag und ASIN für 24 Stunden zwischenspeichern (Filter `mtb_affiliate_items_cache_ttl`); fehlende ASINs für eine Stunde, letzter guter Stand bei API-Fehlern für sieben Tage.
