@@ -67,10 +67,6 @@ function update_option(string $name, $value): bool {
     return true;
 }
 
-function get_post(int $postId) {
-    return $GLOBALS['mtb_posts'][$postId] ?? null;
-}
-
 function get_post_meta(int $postId, string $key, bool $single = false) {
     $value = $GLOBALS['mtb_post_meta'][$postId][$key] ?? ($single ? '' : []);
     return $single ? $value : [$value];
@@ -81,19 +77,8 @@ function update_post_meta(int $postId, string $key, $value): bool {
     return true;
 }
 
-function wp_update_post(array $postarr): int {
-    $GLOBALS['mtb_updated_post'] = $postarr;
-    $postId = (int) ($postarr['ID'] ?? 0);
-    if ($postId && isset($GLOBALS['mtb_posts'][$postId])) {
-        $GLOBALS['mtb_posts'][$postId]->post_content = (string) ($postarr['post_content'] ?? $GLOBALS['mtb_posts'][$postId]->post_content);
-    }
-    return $postId;
-}
+require_once __DIR__ . '/support-post-saving.php';
 
-function remove_action(string $hook, $callback, int $priority = 10): void {}
-function add_action(string $hook, $callback, int $priority = 10, int $accepted_args = 1): void {}
-function wp_is_post_revision(int $postId): bool { return false; }
-function wp_is_post_autosave(int $postId): bool { return false; }
 function current_user_can(string $capability): bool { return $capability === 'manage_options'; }
 function check_admin_referer(string $action, string $name = '_wpnonce'): void { $GLOBALS['mtb_checked_nonce'] = [$action, $name]; }
 function admin_url(string $path = ''): string { return '/wp-admin/' . ltrim($path, '/'); }
@@ -197,16 +182,18 @@ assert_same_actions('manuell_pruefen', $invalid['status'] ?? null, 'Straighten a
 assert_same_actions(null, $GLOBALS['mtb_updated_post'], 'Straighten action should not update content when no safe change is possible.');
 
 $GLOBALS['mtb_updated_post'] = null;
+$originalMismatch = $GLOBALS['mtb_posts'][12]->post_content;
 $existingMismatch = $auditMethod->invoke($plugin, 12, true);
-assert_same_actions('geradegezogen', $existingMismatch['status'] ?? null, 'Straighten action should normalize existing affiliate links and cards to the post-date tracking tag.');
-assert_same_actions(12, $GLOBALS['mtb_updated_post']['ID'] ?? null, 'Straighten action should persist normalized tracking links for existing affiliate content.');
-assert_contains_actions('https://www.amazon.de/dp/B0VALID001?tag=meintechblog-251107-21', $GLOBALS['mtb_posts'][12]->post_content, 'Straighten action should update inline Amazon links to the derived post-date tag.');
-assert_contains_actions('detail_url":"https://www.amazon.de/dp/B0VALID001?tag=meintechblog-251107-21', $GLOBALS['mtb_posts'][12]->post_content, 'Straighten action should update stored affiliate-card URLs to the derived post-date tag.');
+assert_same_actions('geradegezogen', $existingMismatch['status'] ?? null, 'Straighten action should accept existing date tags.');
+assert_same_actions(null, $GLOBALS['mtb_updated_post'], 'Existing tagged links and cards must not be rewritten.');
+assert_same_actions($originalMismatch, $GLOBALS['mtb_posts'][12]->post_content, 'Audit must keep existing content byte-identical.');
+assert_contains_actions('https://www.amazon.de/dp/B0VALID001?tag=meintechblog-251007-21', $GLOBALS['mtb_posts'][12]->post_content, 'Straighten action must preserve the existing inline Amazon URL.');
+assert_contains_actions('detail_url":"https://www.amazon.de/dp/B0VALID001?tag=meintechblog-251007-21', $GLOBALS['mtb_posts'][12]->post_content, 'Straighten action must preserve the existing affiliate-card URL.');
 
 $GLOBALS['mtb_updated_post'] = null;
 $existingValidFallback = $auditMethod->invoke($plugin, 13, true);
 assert_same_actions('geradegezogen', $existingValidFallback['status'] ?? null, 'Straighten action should keep working content geradegezogen when the derived datestamp tag is invalid.');
-assert_same_actions(13, $GLOBALS['mtb_updated_post']['ID'] ?? null, 'Straighten action should still persist content when it keeps the validated existing tag.');
+assert_same_actions(null, $GLOBALS['mtb_updated_post'], 'An existing tag must not require rewriting content.');
 assert_contains_actions('https://www.amazon.de/dp/B0VALID001?tag=meintechblog-250719-21', $GLOBALS['mtb_posts'][13]->post_content, 'Straighten action should preserve the validated existing inline Amazon tag when the post-date tag is invalid.');
 assert_contains_actions('detail_url":"https://www.amazon.de/dp/B0VALID001?tag=meintechblog-250719-21', $GLOBALS['mtb_posts'][13]->post_content, 'Straighten action should preserve the validated existing affiliate-card URL when the post-date tag is invalid.');
 assert_same_actions(

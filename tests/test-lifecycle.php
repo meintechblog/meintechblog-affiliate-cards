@@ -15,9 +15,7 @@ $GLOBALS['mtb_options'] = [
 $GLOBALS['mtb_update_posts'] = [];
 $_GET['tab'] = 'settings';
 
-function add_action(string $hook, $callback): void {
-    $GLOBALS['mtb_actions'][$hook][] = $callback;
-}
+require_once __DIR__ . '/support-post-saving.php';
 
 function add_filter(string $hook, $callback): void {}
 
@@ -62,26 +60,6 @@ function register_rest_route(string $namespace, string $route, array $args): boo
 
 function get_option(string $option, $default = false) {
     return $GLOBALS['mtb_options'][$option] ?? $default;
-}
-
-function remove_action(string $hook, $callback, int $priority = 10): void {
-}
-
-function wp_update_post(array $postarr): int {
-    $GLOBALS['mtb_update_posts'][] = $postarr;
-    return (int) ($postarr['ID'] ?? 0);
-}
-
-function wp_is_post_revision(int $postId): bool {
-    return false;
-}
-
-function wp_is_post_autosave(int $postId): bool {
-    return false;
-}
-
-function get_post(int $postId): ?object {
-    return null;
 }
 
 function delete_option(string $option): bool {
@@ -300,21 +278,18 @@ $GLOBALS['mtb_options']['mtb_affiliate_cards_settings'] = [
 ];
 $GLOBALS['mtb_update_posts'] = [];
 
-$instance->handle_save_post(
-    20042,
-    (object) [
-        'ID' => 20042,
-        'post_date' => '2024-06-04 16:42:54',
-        'post_content' => <<<HTML
+$GLOBALS['mtb_posts'][20042] = (object) [
+    'ID' => 20042,
+    'post_date' => '2024-06-04 16:42:54',
+    'post_content' => <<<HTML
 <!-- wp:paragraph -->
 <p><a href="https://www.amazon.de/dp/B0CP3ZLG7Y?tag=meintechblog-240604-21">ESP32 D1 Mini (Affiliate-Link)</a></p>
 <!-- /wp:paragraph -->
 
 <!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"B0CP3ZLG7Y","title":"ESP32 D1 Mini","detail_url":"https://www.amazon.de/dp/B0CP3ZLG7Y?tag=meintechblog-240604-21","image_url":"","images":[],"benefit":""}],"badgeMode":"auto","ctaLabel":"Preis auf Amazon checken","autoShortenTitles":true} /-->
 HTML,
-    ],
-    true
-);
+];
+$instance->handle_save_post(20042, get_post(20042), true);
 
 assert_same_lifecycle(
     [],

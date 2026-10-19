@@ -542,7 +542,7 @@ final class MTB_Affiliate_Plugin {
             return;
         }
 
-        if (! is_object($post) && function_exists('get_post')) {
+        if (function_exists('get_post')) {
             $post = get_post($postId);
         }
 
@@ -563,11 +563,7 @@ final class MTB_Affiliate_Plugin {
         if (stripos($postContent, 'amazon:') === false) {
             // Pre-pass resolved tokens but no ASINs were produced (e.g. no products in library).
             // Still update the post to remove the dead tokens.
-            if ($postContent !== (string) $post->post_content) {
-                remove_action('save_post', [$this, 'handle_save_post'], 20);
-                wp_update_post(['ID' => $postId, 'post_content' => $postContent]);
-                add_action('save_post', [$this, 'handle_save_post'], 20, 3);
-            }
+            $this->save_post_content($postId, $postContent);
             return;
         }
 
@@ -589,14 +585,7 @@ final class MTB_Affiliate_Plugin {
             return;
         }
 
-        remove_action('save_post', [$this, 'handle_save_post'], 20);
-
-        wp_update_post([
-            'ID' => $postId,
-            'post_content' => $processed['content'],
-        ]);
-
-        add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+        $this->save_post_content($postId, $processed['content']);
     }
 
     /**
@@ -610,7 +599,10 @@ final class MTB_Affiliate_Plugin {
         if (function_exists('wp_is_post_revision') && wp_is_post_revision($postId)) {
             return;
         }
-        if (! is_object($post) && function_exists('get_post')) {
+        if (function_exists('wp_is_post_autosave') && wp_is_post_autosave($postId)) {
+            return;
+        }
+        if (function_exists('get_post')) {
             $post = get_post($postId);
         }
         if (! is_object($post) || ! isset($post->post_content)) {
@@ -623,29 +615,63 @@ final class MTB_Affiliate_Plugin {
             $this->sync_blocks_to_library($content);
         }
 
-        // Update inline affiliate link tracking IDs to match post date
-        if (stripos($content, 'amazon.de/dp/') !== false) {
+        // Only add tracking IDs to Amazon links that do not already have one.
+        if (stripos($content, 'amazon.de/') !== false) {
             $updated = $this->update_inline_affiliate_tags($content, (string) ($post->post_date ?? ''));
-            if ($updated !== $content) {
-                remove_action('save_post', [$this, 'handle_save_post_sync_library'], 30);
-                wp_update_post(['ID' => $postId, 'post_content' => $updated]);
-                add_action('save_post', [$this, 'handle_save_post_sync_library'], 30, 2);
-            }
+            $this->save_post_content($postId, $updated);
         }
     }
 
-    /**
-     * Update tracking IDs in inline affiliate links to match the post date.
-     * Replaces meintechblog-YYMMDD-21 tags with the correct date-derived tag.
-     */
+    private function save_post_content(int $postId, string $content): bool {
+        $post = get_post($postId);
+        if (! is_object($post) || ! isset($post->post_content)) {
+            return false;
+        }
+        if ((string) $post->post_content === $content) {
+            return true;
+        }
+
+        remove_action('save_post', [$this, 'handle_save_post'], 20);
+        remove_action('save_post', [$this, 'handle_save_post_sync_library'], 30);
+        try {
+            $result = wp_update_post(wp_slash([
+                'ID' => $postId,
+                'post_content' => $content,
+            ]), true);
+            return ! is_wp_error($result) && (int) $result > 0;
+        } finally {
+            add_action('save_post', [$this, 'handle_save_post'], 20, 3);
+            add_action('save_post', [$this, 'handle_save_post_sync_library'], 30, 2);
+        }
+    }
+
+    /** Add a date-derived tag without rebuilding URLs or replacing existing tags. */
     private function update_inline_affiliate_tags(string $content, string $postDate): string {
         $correctTag = $this->amazonClient->derive_partner_tag($postDate);
 
-        // Match amazon.de/dp/ links with a meintechblog-*-21 tag parameter
         return preg_replace_callback(
-            '/(https?:\/\/(?:www\.)?amazon\.de\/dp\/[A-Z0-9]{10}\?tag=)(meintechblog-\d{6}-21)/',
-            function ($matches) use ($correctTag) {
-                return $matches[1] . $correctTag;
+            '~https?://(?:www\.)?amazon\.de/(?:dp|gp/product)/[A-Z0-9]{10}(?=[/?\#\s"\'<>\\\\]|$)(?:\\\\u0026|[^\s"\'<>\\\\])*~i',
+            static function (array $matches) use ($correctTag): string {
+                $url = $matches[0];
+                $parts = explode('#', $url, 2);
+                $base = $parts[0];
+                $queryOffset = strpos($base, '?');
+                $query = $queryOffset === false ? '' : substr($base, $queryOffset + 1);
+                // Decode only for detection; the original URL remains byte-for-byte intact.
+                $decodedQuery = str_replace(['&amp;', '\\u0026'], '&', $query);
+                foreach (explode('&', $decodedQuery) as $parameter) {
+                    if (rawurldecode(explode('=', $parameter, 2)[0]) === 'tag') {
+                        return $url;
+                    }
+                }
+
+                $delimiter = '&';
+                if (preg_match('/&amp;|\\\\u0026|&/', $query, $separator)) {
+                    $delimiter = $separator[0];
+                }
+                $join = $queryOffset === false ? '?' : ($query === '' ? '' : $delimiter);
+                return $base . $join . 'tag=' . $correctTag
+                    . (isset($parts[1]) ? '#' . $parts[1] : '');
             },
             $content
         ) ?? $content;
@@ -725,6 +751,7 @@ final class MTB_Affiliate_Plugin {
 
         $content = (string) $post->post_content;
         $settings = $this->settings->get_all();
+        $saveFailed = false;
 
         if ($straighten) {
             $processor = new MTB_Affiliate_Post_Processor(
@@ -744,12 +771,12 @@ final class MTB_Affiliate_Plugin {
             $normalizedContent = $this->normalize_existing_affiliate_tracking($processedContent, $post, $settings);
             $safeToPersist = strpos($normalizedContent, 'amazon:') === false;
 
-            if ($normalizedContent !== $content && $safeToPersist && function_exists('wp_update_post')) {
-                wp_update_post([
-                    'ID' => $postId,
-                    'post_content' => $normalizedContent,
-                ]);
-                $content = $normalizedContent;
+            if ($safeToPersist) {
+                if ($this->save_post_content($postId, $normalizedContent)) {
+                    $content = $normalizedContent;
+                } else {
+                    $saveFailed = true;
+                }
             }
         }
 
@@ -761,8 +788,10 @@ final class MTB_Affiliate_Plugin {
             && (int) ($state['counts']['card_blocks'] ?? 0) === 0;
 
         if ($straighten) {
-            $state['status'] = ($hasUnresolvedMarkers || $trackingIssue) ? 'manuell_pruefen' : 'geradegezogen';
-            $state['timestamps']['straightened_at'] = gmdate('c');
+            $state['status'] = $saveFailed ? 'fehler' : (($hasUnresolvedMarkers || $trackingIssue) ? 'manuell_pruefen' : 'geradegezogen');
+            if (! $saveFailed) {
+                $state['timestamps']['straightened_at'] = gmdate('c');
+            }
         } else {
             if ($trackingIssue) {
                 $state['status'] = 'manuell_pruefen';
@@ -823,99 +852,7 @@ final class MTB_Affiliate_Plugin {
     }
 
     private function normalize_existing_affiliate_tracking(string $content, object $post, array $settings): string {
-        $derivedTag = trim($this->amazonClient->derive_partner_tag((string) ($post->post_date ?? '')));
-        if ($content === '' || $derivedTag === '' || $derivedTag === 'meintechblog-000000-21') {
-            return $content;
-        }
-
-        $existingTag = trim((string) ($this->extract_existing_partner_tag($content) ?? ''));
-        $tagToUse = $this->resolve_normalized_partner_tag($content, $derivedTag, $existingTag, $settings);
-        if ($tagToUse === '') {
-            return $content;
-        }
-
-        $pattern = '/https?:\/\/(?:www\.)?amazon\.[^\s"\']+?\/dp\/[A-Z0-9]{10}[^\s"\']*/i';
-        $normalized = preg_replace_callback($pattern, function (array $matches) use ($tagToUse): string {
-            $url = (string) ($matches[0] ?? '');
-            return $this->replace_partner_tag_in_url($url, $tagToUse);
-        }, $content);
-
-        return is_string($normalized) ? $normalized : $content;
-    }
-
-    private function resolve_normalized_partner_tag(string $content, string $derivedTag, string $existingTag, array $settings): string {
-        $candidateAsins = $this->extract_affiliate_asins_from_content($content);
-        if ($candidateAsins === [] || trim((string) ($settings['client_id'] ?? '')) === '' || trim((string) ($settings['client_secret'] ?? '')) === '') {
-            return $existingTag !== '' ? $existingTag : '';
-        }
-
-        if ($derivedTag !== '' && $this->fetch_items_for_partner_tag($candidateAsins, $settings, $derivedTag) !== []) {
-            return $derivedTag;
-        }
-
-        if ($existingTag !== '' && $this->fetch_items_for_partner_tag($candidateAsins, $settings, $existingTag) !== []) {
-            return $existingTag;
-        }
-
-        return '';
-    }
-
-    private function replace_partner_tag_in_url(string $url, string $partnerTag): string {
-        if ($url === '') {
-            return $url;
-        }
-
-        $delimiter = '&';
-        if (strpos($url, '\\u0026') !== false) {
-            $delimiter = '\\u0026';
-        } elseif (strpos($url, '&amp;') !== false) {
-            $delimiter = '&amp;';
-        }
-
-        $normalizedUrl = str_replace(['\\u0026', '&amp;'], '&', $url);
-        $parts = parse_url($normalizedUrl);
-        $query = isset($parts['query']) && is_string($parts['query']) ? $parts['query'] : '';
-        if ($query === '') {
-            return $url;
-        }
-
-        parse_str($query, $params);
-        if (! isset($params['tag'])) {
-            return $url;
-        }
-
-        $params['tag'] = $partnerTag;
-        $rebuiltQuery = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
-        if ($delimiter !== '&') {
-            $rebuiltQuery = str_replace('&', $delimiter, $rebuiltQuery);
-        }
-
-        $rebuiltUrl = '';
-        if (isset($parts['scheme']) && is_string($parts['scheme'])) {
-            $rebuiltUrl .= $parts['scheme'] . '://';
-        }
-        if (isset($parts['user']) && is_string($parts['user']) && $parts['user'] !== '') {
-            $rebuiltUrl .= $parts['user'];
-            if (isset($parts['pass']) && is_string($parts['pass']) && $parts['pass'] !== '') {
-                $rebuiltUrl .= ':' . $parts['pass'];
-            }
-            $rebuiltUrl .= '@';
-        }
-        if (isset($parts['host']) && is_string($parts['host'])) {
-            $rebuiltUrl .= $parts['host'];
-        }
-        if (isset($parts['port']) && is_int($parts['port'])) {
-            $rebuiltUrl .= ':' . $parts['port'];
-        }
-        $rebuiltUrl .= (string) ($parts['path'] ?? '');
-        if ($rebuiltQuery !== '') {
-            $rebuiltUrl .= '?' . $rebuiltQuery;
-        }
-        if (isset($parts['fragment']) && is_string($parts['fragment']) && $parts['fragment'] !== '') {
-            $rebuiltUrl .= '#' . $parts['fragment'];
-        }
-
-        return $rebuiltUrl !== '' ? $rebuiltUrl : $url;
+        return $this->update_inline_affiliate_tags($content, (string) ($post->post_date ?? ''));
     }
 
     private function extract_existing_partner_tag(string $content): ?string {
