@@ -421,8 +421,19 @@ final class MTB_Affiliate_Post_Processor {
     }
 
     private function wrap_block_comment(array $attrs): string {
+        if (function_exists('serialize_block_attributes')) {
+            $serialized = serialize_block_attributes($attrs);
+        } else {
+            // Match WordPress's escaping for JSON embedded in block comments.
+            $serialized = str_replace(
+                ['--', '<', '>', '&', '\\"'],
+                ['\\u002d\\u002d', '\\u003c', '\\u003e', '\\u0026', '\\u0022'],
+                (string) json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            );
+        }
+
         return '<!-- wp:meintechblog/affiliate-cards '
-            . json_encode($attrs, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+            . $serialized
             . ' -->'
             . '<!-- /wp:meintechblog/affiliate-cards -->';
     }
