@@ -2,15 +2,29 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/bootstrap-plugin.php';
+
 $GLOBALS['mtb_actions'] = [];
 $GLOBALS['mtb_deleted_options'] = [];
 $GLOBALS['mtb_rest_routes'] = [];
-$GLOBALS['mtb_options'] = [];
+$GLOBALS['mtb_options'] = [
+    // Keep unrelated schema upgrades out of this standalone lifecycle test.
+    'mtb_affiliate_clicks_db_version' => '1.0',
+    'mtb_affiliate_availability_db_version' => '1.0',
+];
 $GLOBALS['mtb_update_posts'] = [];
 $_GET['tab'] = 'settings';
 
 function add_action(string $hook, $callback): void {
     $GLOBALS['mtb_actions'][$hook][] = $callback;
+}
+
+function add_filter(string $hook, $callback): void {}
+
+function add_menu_page(...$args): void {}
+
+function add_submenu_page(string $parent, string $title, string $label, string $capability, string $slug, $callback): void {
+    $GLOBALS['mtb_submenus'][$slug] = $callback;
 }
 
 function current_user_can(string $capability): bool {
@@ -122,16 +136,17 @@ $instance->render_settings_page();
 $settingsPageHtml = (string) ob_get_clean();
 
 assert_true_lifecycle(
-    str_contains($settingsPageHtml, 'Affiliate Audit'),
-    'Settings page should render an Affiliate Audit tab.'
+    str_contains($settingsPageHtml, '<h1>Konfiguration</h1>'),
+    'Settings page should render the configuration heading.'
+);
+$instance->register_settings_page();
+assert_true_lifecycle(
+    ($GLOBALS['mtb_submenus']['mtb-affiliate-cards'] ?? null) === [$instance, 'render_settings_page'],
+    'Settings menu should link to the configuration page.'
 );
 assert_true_lifecycle(
-    str_contains($settingsPageHtml, 'tab=settings'),
-    'Settings page should render a settings tab link.'
-);
-assert_true_lifecycle(
-    str_contains($settingsPageHtml, 'tab=audit'),
-    'Settings page should render an audit tab link.'
+    ($GLOBALS['mtb_submenus']['mtb-affiliate-cards-audit'] ?? null) === [$instance, 'render_audit_page'],
+    'Audit menu should link to the audit page.'
 );
 
 foreach ($GLOBALS['mtb_actions']['rest_api_init'] as $restCallback) {

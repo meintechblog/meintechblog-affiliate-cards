@@ -5,6 +5,9 @@ declare(strict_types=1);
 final class MTB_Affiliate_Amazon_Client {
     private const TOKEN_URL = 'https://api.amazon.co.uk/auth/o2/token';
     private const CATALOG_URL = 'https://creatorsapi.amazon/catalog/v1/getItems';
+    private const ITEMS_CACHE_TTL = 86400;
+    private const ITEMS_GOOD_TTL = 604800;
+    private const ITEMS_NEGATIVE_TTL = 3600;
     private const BENEFIT_OVERRIDES = [
         'B0CK3L9WD3' => 'Leistungsstarkes Basis-System',
         'B08JC5DH9Q' => 'Robuste Industrial-microSD',
@@ -16,7 +19,8 @@ final class MTB_Affiliate_Amazon_Client {
     private MTB_Affiliate_Title_Shortener $shortener;
     /** @var callable */
     private $transport;
-    private ?string $accessToken = null;
+    /** @var array<string, array{token:string,expires_at:int}> */
+    private array $accessTokens = [];
 
     public function __construct(?MTB_Affiliate_Title_Shortener $shortener = null, ?callable $transport = null) {
         $this->shortener = $shortener ?? new MTB_Affiliate_Title_Shortener();
@@ -71,6 +75,83 @@ final class MTB_Affiliate_Amazon_Client {
             return [];
         }
 
+        if (! function_exists('get_transient') || ! function_exists('set_transient')) {
+            return $this->fetch_items($asins, $context);
+        }
+
+        $resolved = [];
+        $missing = [];
+        foreach ($asins as $asin) {
+            $cached = get_transient($this->items_cache_key($asin, $context));
+            if (is_array($cached)) {
+                // An empty array is a cached negative result; false means cache miss.
+                $resolved[$asin] = $cached;
+            } else {
+                $missing[] = $asin;
+            }
+        }
+
+        if ($missing !== []) {
+            try {
+                $fetched = $this->fetch_items($missing, $context);
+            } catch (\Throwable $exception) {
+                foreach ($missing as $asin) {
+                    $good = get_transient($this->items_cache_key($asin, $context, true));
+                    if (! is_array($good) || $good === []) {
+                        // Preserve the caller's existing catch when any item has no fallback.
+                        throw $exception;
+                    }
+                    $resolved[$asin] = $good;
+                }
+                // Do not refresh either TTL on failure: stale data must eventually expire.
+                return $this->ordered_items($asins, $resolved);
+            }
+
+            $ttl = function_exists('apply_filters')
+                ? (int) apply_filters('mtb_affiliate_items_cache_ttl', self::ITEMS_CACHE_TTL)
+                : self::ITEMS_CACHE_TTL;
+            foreach ($fetched as $item) {
+                $resolved[$item['asin']] = $item;
+            }
+            foreach ($missing as $asin) {
+                $item = $resolved[$asin] ?? [];
+                $key = $this->items_cache_key($asin, $context);
+                if ($item === []) {
+                    set_transient($key, [], self::ITEMS_NEGATIVE_TTL);
+                    continue;
+                }
+                // WordPress treats TTL 0 as forever; allow a non-positive filter to disable
+                // the fresh cache instead, while retaining the independent failure fallback.
+                if ($ttl > 0) {
+                    set_transient($key, $item, $ttl);
+                }
+                set_transient($this->items_cache_key($asin, $context, true), $item, self::ITEMS_GOOD_TTL);
+            }
+        }
+
+        return $this->ordered_items($asins, $resolved);
+    }
+
+    private function items_cache_key(string $asin, array $context, bool $good = false): string {
+        $scope = [
+            trim((string) ($context['marketplace'] ?? 'www.amazon.de')),
+            trim((string) ($context['partner_tag'] ?? '')),
+            $asin,
+        ];
+        return ($good ? 'mtb_aff_items_good_v1_' : 'mtb_aff_items_v1_') . hash('sha256', serialize($scope));
+    }
+
+    private function ordered_items(array $asins, array $resolved): array {
+        $items = [];
+        foreach ($asins as $asin) {
+            if (! empty($resolved[$asin])) {
+                $items[] = $resolved[$asin];
+            }
+        }
+        return $items;
+    }
+
+    private function fetch_items(array $asins, array $context): array {
         $marketplace = trim((string) ($context['marketplace'] ?? 'www.amazon.de'));
         $partnerTag = trim((string) ($context['partner_tag'] ?? ''));
         $token = $this->get_access_token(
@@ -118,6 +199,7 @@ final class MTB_Affiliate_Amazon_Client {
      * surfaces an HTTP-status-driven auth state, per-ASIN errors, and a POSITIVE offers-presence
      * signal — so the checker can tell account-wide auth failure from a transient error from a
      * real "no offer" (Codex-Refute RC1/RC2/RC3, 2026-06-03). Never throws.
+     * Always queries the catalog live; only the access token may be cached.
      *
      * @return array{auth_state:string,http_status:int,items:array,errors:array,raw_errors:array,raw:?array}
      */
@@ -273,8 +355,14 @@ final class MTB_Affiliate_Amazon_Client {
     }
 
     private function get_access_token(string $clientId, string $clientSecret): string {
-        if ($this->accessToken !== null) {
-            return $this->accessToken;
+        $key = 'mtb_aff_token_v1_' . hash('sha256', $clientId);
+        $cached = $this->accessTokens[$key] ?? null;
+        if ($cached === null && function_exists('get_transient')) {
+            $cached = get_transient($key);
+        }
+        if (is_array($cached) && ! empty($cached['token']) && ($cached['expires_at'] ?? 0) > time()) {
+            $this->accessTokens[$key] = $cached;
+            return (string) $cached['token'];
         }
 
         [$status, $payload] = $this->request(
@@ -293,8 +381,16 @@ final class MTB_Affiliate_Amazon_Client {
             throw new RuntimeException('Token request failed.');
         }
 
-        $this->accessToken = (string) $payload['access_token'];
-        return $this->accessToken;
+        $token = (string) $payload['access_token'];
+        $ttl = isset($payload['expires_in']) && is_numeric($payload['expires_in'])
+            ? max(0, (int) $payload['expires_in'] - 60)
+            : 3000;
+        $entry = ['token' => $token, 'expires_at' => time() + $ttl];
+        $this->accessTokens[$key] = $entry;
+        if ($ttl > 0 && function_exists('set_transient')) {
+            set_transient($key, $entry, $ttl);
+        }
+        return $token;
     }
 
     private function map_item(array $item): array {

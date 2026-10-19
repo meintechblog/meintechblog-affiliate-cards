@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/bootstrap-plugin.php';
+
 $GLOBALS['mtb_options'] = [
     'mtb_affiliate_cards_settings' => [
         'cta_label' => 'Preis auf Amazon checken',
@@ -228,9 +230,9 @@ assert_same_actions(
     'Admin handler should validate the per-row audit nonce.'
 );
 assert_same_actions(
-    '/wp-admin/options-general.php?page=mtb-affiliate-cards&tab=audit&mtb-audit-post=10&mtb-audit-result=straighten&mtb-audit-status=geradegezogen',
+    '/wp-admin/admin.php?page=mtb-affiliate-cards-audit&mtb-audit-post=10&mtb-audit-result=straighten&mtb-audit-status=geradegezogen',
     $GLOBALS['mtb_redirect_to'],
-    'Admin handler should redirect back to the audit tab with the result payload.'
+    'Admin handler should redirect back to the audit page with the result payload.'
 );
 
 echo "ok\n";

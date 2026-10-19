@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/bootstrap-plugin.php';
+
 $_GET['tab'] = 'audit';
 $GLOBALS['mtb_render_posts'] = [
     (object) [
@@ -79,7 +81,7 @@ function assert_contains_render(string $needle, string $haystack, string $messag
 }
 
 ob_start();
-MTB_Affiliate_Plugin::instance()->render_settings_page();
+MTB_Affiliate_Plugin::instance()->render_audit_page();
 $html = (string) ob_get_clean();
 
 assert_contains_render('Affiliate Audit', $html, 'Audit tab render should keep the tab heading visible.');

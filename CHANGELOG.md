@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2
+
+- Produktdaten pro Marketplace, Partner-Tag und ASIN für 24 Stunden zwischenspeichern (Filter `mtb_affiliate_items_cache_ttl`); fehlende ASINs für eine Stunde, letzter guter Stand bei API-Fehlern für sieben Tage.
+- Zugriffstoken bis 60 Sekunden vor Ablauf zwischenspeichern (Fallback: 50 Minuten). Verfügbarkeitsprüfungen bleiben live.
+
 ## 0.4.1
 
 - Verfügbarkeits-Klassifikation korrigiert (Eich-Stichprobe gegen die Live-Creators-API, 2026-06-03): Verfügbarkeit hängt jetzt am Vorhandensein eines **Listings**, NICHT am Preis. Ein lebendes BuyBox-Produkt kann ein Listing ohne Preis liefern (MAP „Preis erst im Warenkorb" — live am Canary B07ZQMG51R bestätigt). Vorher wurden solche Produkte fälschlich `unavailable_temp`. Neu: `has_listing` (Listings nicht-leer) → `available`; Offers-Node vorhanden aber Listings leer → `unavailable_temp`; Preis bleibt optionale Metadaten. (Genau die von Codex-Refute RC3 vorhergesagte Shape-Falle, vom Eich-Gate gefangen — der Canary-Guard hätte den echten Scan ohnehin abgebrochen.)

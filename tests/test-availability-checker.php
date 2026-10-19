@@ -157,7 +157,6 @@ $GLOBALS['wpdb'] = new MTB_Fake_Avail_Wpdb();
 $wpdb = $GLOBALS['wpdb'];
 $checker = new MTB_Affiliate_Availability_Checker(make_client($okToken, [200, []]));
 $rm = new ReflectionMethod($checker, 'record_status');
-$rm->setAccessible(true);
 
 // three consecutive unavailable_temp -> count 3 = repair candidate
 $rm->invoke($checker, 'BSOLDOUT01', 'unavailable_temp', []);
