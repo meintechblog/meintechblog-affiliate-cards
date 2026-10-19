@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.4
+
+- Karten, Bilder und Inline-Links auf HTTP/HTTPS begrenzen; Editor-Inline-Links sicher per DOM erzeugen.
+- Neue Block-Attribute kommentarsicher serialisieren; bestehende Blöcke unverändert lassen.
+- Einstellungen bei Reaktivierung erhalten; Backfill nur per CLI erlauben und interne Skripte, Planungsdaten, Tests und Dokumentation aus dem ZIP ausschließen.
+
 ## 0.4.3
 
 - Vorhandene Partner-Kennungen erhalten; Datums-Kennung nur bei Amazon-Links ohne `tag` ergänzen.
