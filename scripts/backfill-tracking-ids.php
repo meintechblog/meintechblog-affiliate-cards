@@ -8,6 +8,11 @@
 
 declare(strict_types=1);
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit("Error: Backfill is only available via CLI / WP-CLI.\n");
+}
+
 if (!defined('ABSPATH')) {
     // Allow direct execution from plugin directory if WP is already loaded
     // Otherwise require wp-load.php from standard location

@@ -14,6 +14,11 @@ rsync -a \
   --exclude '.git' \
   --exclude 'build' \
   --exclude '.DS_Store' \
+  --exclude '/scripts/' \
+  --exclude '/.planning/' \
+  --exclude '/tests/' \
+  --exclude '/docs/' \
+  --exclude '/.codex-*.md' \
   "$ROOT_DIR/" "$STAGE_DIR/"
 
 cd "$BUILD_DIR"
