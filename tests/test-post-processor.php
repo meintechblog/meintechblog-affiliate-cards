@@ -328,12 +328,12 @@ $inlineExistingAdjacent = $inlineResolverProcessor->process(<<<HTML
 HTML);
 
 if (substr_count($inlineExistingAdjacent['content'], '"asin":"B0INLINE14"') !== 1) {
-    fwrite(STDERR, "Adjacent inline affiliate cards should be updated instead of duplicated.\n");
+    fwrite(STDERR, "Existing affiliate cards must not be duplicated.\n");
     exit(1);
 }
 
-assert_contains_processor('Amazon Titel B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should keep the newer resolved content.');
-assert_not_contains_processor('https://old.example/B0INLINE14', $inlineExistingAdjacent['content'], 'Adjacent inline affiliate card should replace stale detail URLs.');
+assert_contains_processor('Amazon Titel B0INLINE14', $inlineExistingAdjacent['content'], 'The new inline link should use the resolved title.');
+assert_contains_processor('https://old.example/B0INLINE14', $inlineExistingAdjacent['content'], 'Existing card URLs must stay unchanged.');
 
 $repeatedAsinAcrossParagraphs = $inlineResolverProcessor->process(<<<HTML
 <!-- wp:paragraph -->
@@ -534,8 +534,8 @@ $updated = $processor->process($existingBlockContent);
 
 assert_same_processor(['B0CK3L9WD3'], $updated['asins'], 'Processor should still detect new markers when a block already exists.');
 
-if (substr_count($updated['content'], '<!-- wp:meintechblog/affiliate-cards') !== 1) {
-    fwrite(STDERR, "Processor should update the existing affiliate block instead of duplicating it.\n");
+if (substr_count($updated['content'], '<!-- wp:meintechblog/affiliate-cards') !== 2) {
+    fwrite(STDERR, "Processor should preserve the existing block and append a new card.\n");
     exit(1);
 }
 
@@ -562,7 +562,7 @@ if (substr_count($deduped['content'], '"asin":"B0D7955R6N"') !== 1) {
 }
 
 assert_contains_processor('"title":"Schon da"', $deduped['content'], 'Processor should preserve enriched data for existing items.');
-assert_contains_processor('"asin":"B0CLTV6YB2"', $deduped['content'], 'Processor should append new ASINs to the existing block.');
+assert_contains_processor('"asin":"B0CLTV6YB2"', $deduped['content'], 'Processor should append cards for new ASINs.');
 
 $enrichingProcessor = new MTB_Affiliate_Post_Processor(
     new MTB_Affiliate_Token_Scanner(),
@@ -610,5 +610,21 @@ HTML);
 assert_contains_processor('"asin":"B0INLINE30"', $inlineFallbackCard['content'], 'Existing Amazon links should still create a fallback card when the resolver returns no item.');
 assert_contains_processor('"title":"Alte Lötstation 60W"', $inlineFallbackCard['content'], 'Fallback cards should reuse the existing link text without the Affiliate-Link suffix.');
 assert_contains_processor('"detail_url":"https://www.amazon.de/dp/B0INLINE30?tag=meintechblog-241212-21"', $inlineFallbackCard['content'], 'Fallback cards should keep the existing affiliate URL.');
+
+// Existing card markup (including rendered HTML and custom attrs) stays byte-identical.
+$oldCards = [
+    '<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"OLDASIN001","title":"Alt"}],"custom":"keep"} /-->' . "\n\n",
+    '<!-- wp:meintechblog/affiliate-cards {"items":[{"asin":"OLDASIN002"}]} --><div>Eigener Inhalt</div><!-- /wp:meintechblog/affiliate-cards -->' . "\n\n",
+];
+foreach (['<p>amazon:B0INLINE16</p>', '<p>Neu: amazon:B0INLINE16 im Text.</p>'] as $newToken) {
+    $input = implode('', $oldCards) . $newToken;
+    $result = $inlineResolverProcessor->process($input);
+    foreach ($oldCards as $oldCard) {
+        assert_contains_processor($oldCard, $result['content'], 'Existing cards must remain byte-identical.');
+    }
+    assert_same_processor(3, substr_count($result['content'], '<!-- wp:meintechblog/affiliate-cards'), 'Two old cards plus a token should yield three cards.');
+    assert_same_processor($result['content'], $inlineResolverProcessor->process($result['content'])['content'], 'Processing twice must not change enriched content.');
+}
+assert_same_processor(implode('', $oldCards), $processor->process(implode('', $oldCards))['content'], 'Existing cards without tokens must remain unchanged.');
 
 echo "ok\n";

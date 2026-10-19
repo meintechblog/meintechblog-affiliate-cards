@@ -9,7 +9,7 @@ final class MTB_Affiliate_Post_Processor {
     private const INLINE_MARKER_PATTERN = '/\bamazon:([A-Z0-9]{10})\b/i';
     private const INLINE_LINK_PATTERN = '/href=(["\'])https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})(?:[?\/"\']|$)/i';
     private const INLINE_LINK_CAPTURE_PATTERN = '/<a\b[^>]*href=(["\'])(https?:\/\/(?:www\.)?amazon\.[^"\']+?\/dp\/([A-Z0-9]{10})[^"\']*)\1[^>]*>(.*?)<\/a>/isu';
-    private const BLOCK_PATTERN = '/<!-- wp:meintechblog\/affiliate-cards(?:\s+({.*?}))?\s*(?:\/-->|-->\s*<!-- \/wp:meintechblog\/affiliate-cards -->)\s*/su';
+    private const BLOCK_PATTERN = '/<!-- wp:meintechblog\/affiliate-cards(?:\s+({.*?}))?\s*(?:\/-->|-->.*?<!-- \/wp:meintechblog\/affiliate-cards -->)\s*/su';
     private const PLACEHOLDER = '__MTB_AFFILIATE_BLOCK__';
 
     private MTB_Affiliate_Token_Scanner $scanner;
@@ -38,23 +38,29 @@ final class MTB_Affiliate_Post_Processor {
         $placeholderInserted = false;
         $inlinePlaceholderIndex = 0;
 
+        // Protect complete existing blocks from token processing and deduplication.
+        $existingBlocks = [];
+        $existingAsins = [];
         $contentWithoutBlock = preg_replace_callback(
             self::BLOCK_PATTERN,
-            function (array $matches) use (&$placeholderInserted, &$existingAttrs): string {
-                if ($placeholderInserted) {
-                    return '';
+            function (array $matches) use (&$existingBlocks, &$existingAttrs, &$existingAsins, &$inlineCardAsins, $content): string {
+                $attrs = $this->decode_attrs($matches[1] ?? '');
+                foreach ($this->sanitize_items($attrs['items'] ?? []) as $item) {
+                    $asin = (string) $item['asin'];
+                    $existingAsins[$asin] = true;
+                    $inlineCardAsins[$asin] = true;
+                    $existingAttrs['items'][] = $item;
                 }
-
-                $existingAttrs = $this->decode_attrs($matches[1] ?? '');
-                $placeholderInserted = true;
-                return self::PLACEHOLDER . "\n\n";
+                $placeholder = '__MTB_EXISTING_' . hash('sha256', $content) . '_' . count($existingBlocks) . '__';
+                $existingBlocks[$placeholder] = $matches[0];
+                return $placeholder;
             },
             $content
         );
 
         $processedContent = preg_replace_callback(
             self::PARAGRAPH_PATTERN,
-            static function (array $matches) use (&$asins, &$standaloneAsins, &$inlineAsins, &$inlinePlaceholders, &$inlineCardAsins, &$inlineFallbackItems, &$placeholderInserted, &$inlinePlaceholderIndex): string {
+            static function (array $matches) use (&$asins, &$standaloneAsins, &$inlineAsins, &$inlinePlaceholders, &$inlineCardAsins, &$inlineFallbackItems, &$placeholderInserted, &$inlinePlaceholderIndex, $existingAsins): string {
                 $innerText = trim(strip_tags(html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8')));
                 if (! preg_match(self::TOKEN_PATTERN, $innerText, $tokenMatch)) {
                     $foundInlineAsins = self::extract_inline_asins($matches[1]);
@@ -85,6 +91,9 @@ final class MTB_Affiliate_Post_Processor {
                 }
 
                 $asins[] = $tokenMatch[1];
+                if (isset($existingAsins[$tokenMatch[1]])) {
+                    return '';
+                }
                 $standaloneAsins[] = $tokenMatch[1];
 
                 if (! $placeholderInserted) {
@@ -104,7 +113,7 @@ final class MTB_Affiliate_Post_Processor {
         if ($uniqueAsins === []) {
             return [
                 'asins' => [],
-                'content' => $processedContent ?? $content,
+                'content' => strtr($processedContent ?? $content, $existingBlocks),
             ];
         }
 
@@ -135,10 +144,11 @@ final class MTB_Affiliate_Post_Processor {
         }
 
         $block = $uniqueStandaloneAsins !== []
-            ? $this->serialize_block($uniqueStandaloneAsins, $existingAttrs)
+            ? $this->serialize_block($uniqueStandaloneAsins)
             : '';
         $finalContent = str_replace(self::PLACEHOLDER, $block, $processedContent ?? $content);
         $finalContent = $this->collapse_adjacent_affiliate_blocks($finalContent);
+        $finalContent = strtr($finalContent, $existingBlocks);
 
         return [
             'asins' => $uniqueAsins,
