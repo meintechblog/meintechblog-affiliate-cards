@@ -65,4 +65,41 @@ assert_same_settings('www.amazon.de', $saved['marketplace'], 'Marketplace should
 assert_same_settings('next-client', $saved['client_id'], 'Client id should be sanitized on save.');
 assert_same_settings('next-secret', $saved['client_secret'], 'Client secret should be sanitized on save.');
 
+$secret = $saved['telegram_webhook_secret'];
+assert_same_settings(32, strlen($secret), 'An empty webhook secret should be generated.');
+
+// Emulate the Settings API callbacks with each form's submitted fields.
+$telegram = $settings->sanitize([
+    'telegram_bot_token' => ' bot-token ',
+    'telegram_chat_id' => ' chat-id ',
+    'telegram_webhook_secret' => $secret,
+]);
+update_option($settings->option_name(), $telegram);
+assert_same_settings('next-client', $telegram['client_id'], 'Telegram must keep Amazon credentials.');
+assert_same_settings('next-secret', $telegram['client_secret'], 'Telegram must keep the Amazon secret.');
+assert_same_settings($saved['cta_label'], $telegram['cta_label'], 'Telegram must keep card settings.');
+assert_same_settings($secret, $telegram['telegram_webhook_secret'], 'Telegram must not rotate an existing secret.');
+
+$amazon = $settings->sanitize([
+    'cta_label' => 'Neuer CTA',
+    'badge_mode' => 'setup',
+    'marketplace' => 'www.amazon.de',
+    'client_id' => 'changed-client',
+    'client_secret' => 'changed-secret',
+    'auto_shorten_titles' => '0', // hidden field when unchecked
+]);
+update_option($settings->option_name(), $amazon);
+assert_same_settings('bot-token', $amazon['telegram_bot_token'], 'Amazon must keep the bot token.');
+assert_same_settings('chat-id', $amazon['telegram_chat_id'], 'Amazon must keep the chat ID.');
+assert_same_settings($secret, $amazon['telegram_webhook_secret'], 'Amazon must not regenerate the webhook secret.');
+assert_same_settings(false, $settings->get_all()['auto_shorten_titles'], 'Unchecked must remain false after reading.');
+
+$settings->save(['telegram_chat_id' => '']);
+$afterTelegram = $settings->get_all();
+assert_same_settings('', $afterTelegram['telegram_chat_id'], 'An explicitly submitted empty field may be cleared.');
+assert_same_settings(false, $afterTelegram['auto_shorten_titles'], 'A later Telegram save must keep the checkbox off.');
+assert_same_settings('changed-client', $afterTelegram['client_id'], 'A later Telegram save must keep changed Amazon credentials.');
+assert_same_settings($secret, $afterTelegram['telegram_webhook_secret'], 'Partial saves must keep the secret stable.');
+assert_same_settings($afterTelegram, $settings->sanitize($afterTelegram), 'Repeated sanitization must be stable.');
+
 echo "ok\n";

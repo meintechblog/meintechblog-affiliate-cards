@@ -69,6 +69,9 @@ final class MTB_Affiliate_Settings {
 
     public function sanitize(array $settings): array {
         $defaults = $this->defaults();
+        // Both admin forms submit only their own fields. Keep all omitted values.
+        $stored = function_exists('get_option') ? get_option($this->option_name(), []) : [];
+        $settings = array_merge($defaults, is_array($stored) ? $stored : [], $settings);
         $cta = trim((string) ($settings['cta_label'] ?? ''));
         $badgeMode = trim((string) ($settings['badge_mode'] ?? 'auto'));
         $marketplace = trim((string) ($settings['marketplace'] ?? $defaults['marketplace']));

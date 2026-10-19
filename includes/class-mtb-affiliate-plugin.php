@@ -287,7 +287,7 @@ final class MTB_Affiliate_Plugin {
                         </tr>
                         <tr>
                             <th scope="row">Kurze Titel bevorzugen</th>
-                            <td><label><input type="checkbox" name="<?php echo esc_attr($this->settings->option_name()); ?>[auto_shorten_titles]" value="1" <?php checked($settings['auto_shorten_titles']); ?>> Automatische Kürzung im aktuellen Live-Stil aktivieren</label></td>
+                            <td><input type="hidden" name="<?php echo esc_attr($this->settings->option_name()); ?>[auto_shorten_titles]" value="0"><label><input type="checkbox" name="<?php echo esc_attr($this->settings->option_name()); ?>[auto_shorten_titles]" value="1" <?php checked($settings['auto_shorten_titles']); ?>> Automatische Kürzung im aktuellen Live-Stil aktivieren</label></td>
                         </tr>
                     </table>
                     <?php if (function_exists('submit_button')) : ?>

@@ -117,6 +117,10 @@ assert_true_lifecycle(
     str_contains($settingsPageHtml, '<h1>Konfiguration</h1>'),
     'Settings page should render the configuration heading.'
 );
+assert_true_lifecycle(
+    str_contains($settingsPageHtml, 'type="hidden" name="mtb_affiliate_cards_settings[auto_shorten_titles]" value="0"'),
+    'The Amazon form must explicitly submit false for an unchecked checkbox.'
+);
 $instance->register_settings_page();
 assert_true_lifecycle(
     ($GLOBALS['mtb_submenus']['mtb-affiliate-cards'] ?? null) === [$instance, 'render_settings_page'],
