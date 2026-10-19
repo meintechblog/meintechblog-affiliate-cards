@@ -91,7 +91,10 @@ final class MTB_Affiliate_Plugin {
 
     public static function activate(): void {
         $settings = new MTB_Affiliate_Settings();
-        $settings->save($settings->defaults());
+        $missing = new stdClass();
+        if (get_option($settings->option_name(), $missing) === $missing) {
+            $settings->save($settings->defaults());
+        }
         MTB_Affiliate_Tracking_Registry::create_table();
         MTB_Affiliate_Product_Library::create_table();
         MTB_Affiliate_Click_Tracker::create_table();
