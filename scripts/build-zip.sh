@@ -18,7 +18,10 @@ rsync -a \
   --exclude '/.planning/' \
   --exclude '/tests/' \
   --exclude '/docs/' \
-  --exclude '/.codex-*.md' \
+  --exclude '/.worktrees/' \
+  --exclude '.codex-*' \
+  --exclude '/.gitignore' \
+  --exclude '/flows.json' \
   "$ROOT_DIR/" "$STAGE_DIR/"
 
 cd "$BUILD_DIR"

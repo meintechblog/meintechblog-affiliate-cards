@@ -63,6 +63,9 @@ try {
         check_backfill(! str_contains($listing, 'meintechblog-affiliate-cards/' . $directory . '/'), 'Production ZIP must exclude ' . $directory);
     }
     check_backfill(! str_contains($listing, '/.codex-'), 'Local task and response files must not ship in the ZIP.');
+    foreach (['.worktrees/', '.gitignore', 'flows.json'] as $local_entry) {
+        check_backfill(! str_contains($listing, 'meintechblog-affiliate-cards/' . $local_entry), 'Production ZIP must exclude ' . $local_entry);
+    }
     foreach (['meintechblog-affiliate-cards.php', 'includes/class-mtb-affiliate-renderer.php', 'blocks/affiliate-cards/index.js', 'templates/affiliate-cards.php'] as $file) {
         check_backfill(str_contains($listing, 'meintechblog-affiliate-cards/' . $file . "\n"), 'Production ZIP must retain runtime file: ' . $file);
     }
