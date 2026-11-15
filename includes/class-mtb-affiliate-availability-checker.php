@@ -44,6 +44,7 @@ final class MTB_Affiliate_Availability_Checker {
 
     private const DEFAULT_PARTNER_TAG = 'meintechblog-230807-21'; // registered tag (138x used)
     private const CANARY_ASIN         = 'B07ZQMG51R';             // known-live (stub/shape guard)
+    private const GP_PRODUCT_LINK_PATTERN = '/https?:\/\/(?:www\.)?amazon\.(?:co\.|com\.)?[a-z]{2,3}\/(?:[^\s"\'<>?#]*?\/)?gp\/product\/([A-Z0-9]{10})(?=[?\/#&"\'<>\s]|$)/i';
 
     private ?MTB_Affiliate_Amazon_Client $client;
     private ?MTB_Affiliate_Settings $settings;
@@ -556,6 +557,19 @@ final class MTB_Affiliate_Availability_Checker {
         return $t !== '' ? $t : self::DEFAULT_PARTNER_TAG;
     }
 
+    /**
+     * ASINs from amazon.* /gp/product/ASIN links (read-only extraction for the checker's worklist).
+     * Kept local on purpose: widening the audit service's pattern would change tracking/legacy states on save.
+     *
+     * @return string[]
+     */
+    private static function gp_product_asins(string $content): array {
+        if ($content === '' || ! preg_match_all(self::GP_PRODUCT_LINK_PATTERN, $content, $m)) {
+            return [];
+        }
+        return array_values(array_unique(array_map('strtoupper', $m[1])));
+    }
+
     private function collect_asins(): array {
         $asins = [];
         foreach ($this->iterate_post_asins() as $postAsins) {
@@ -593,7 +607,9 @@ final class MTB_Affiliate_Availability_Checker {
             }
             $state = $audit->scan_post_content($content);
             $out   = [];
-            foreach ((array) ($state['asins'] ?? []) as $a) {
+            // The audit extractor only knows /dp/ links; older posts use /gp/product/ (S-11806: 31 ASINs never checked).
+            $found = array_merge((array) ($state['asins'] ?? []), self::gp_product_asins($content));
+            foreach ($found as $a) {
                 $a = strtoupper((string) $a);
                 if (preg_match('/^[A-Z0-9]{10}$/', $a)) {
                     $out[$a] = true;

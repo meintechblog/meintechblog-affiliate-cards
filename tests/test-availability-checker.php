@@ -179,6 +179,27 @@ $wpdb->rows['BREPLACED1'] = ['asin' => 'BREPLACED1', 'status' => 'replaced', 'co
 $rm->invoke($checker, 'BREPLACED1', 'not_found', []);
 assert_true($wpdb->rows['BREPLACED1']['status'] === 'replaced', 'replaced status is terminal');
 
+// ============ C2) /gp/product/ links are collected too (S-11806) =============
+$gm = new ReflectionMethod(MTB_Affiliate_Availability_Checker::class, 'gp_product_asins');
+$gm->setAccessible(true);
+$gpContent = '<a href="https://www.amazon.de/gp/product/B07W8MCBMS?tag=meintechblog-231127-21">x</a>'
+    . ' <a href="https://amazon.de/gp/product/b07tmpc9fg/">y</a>'
+    . ' <a href="https://www.amazon.de/gp/product/B07W8MCBMS">dup</a>'
+    . ' <a href="https://www.amazon.de/dp/B0DPONLY01">dp only</a>'
+    . ' <a href="https://example.com/gp/product/B0NOTAMZN1">fremd</a>'
+    . ' <a href="https://www.amazon.de/gp/product/B0TOOLONG123">zu lang</a>'
+    . ' <a href="https://www.amazon.co.uk/Some-Title/gp/product/B0PATHPRE1/ref=x">mit Pfad</a>'
+    . ' <a href="https://amazon.de.example.org/gp/product/B0HOSTFAKE">Host-Täuschung</a>'
+    . ' <a href="https://amazon.de/?next=/gp/product/B0QUERYPR1">Query-Präfix</a>'
+    . ' <a href="https://amazon.de/#/gp/product/B0FRAGMNT1">Fragment-Präfix</a>'
+    . ' <a href="https://www.amazon.de/gp/product/B0SHORT1">zu kurz</a>'
+    . ' https://www.amazon.com.au/gp/product/B0AUSTRAL1&amp;tag=x'
+    . ' <a href=https://www.amazon.de/gp/product/B0NOQUOTE1>ohne Anführungszeichen</a>';
+$gpAsins = $gm->invoke(null, $gpContent);
+sort($gpAsins);
+assert_true($gpAsins === ['B07TMPC9FG', 'B07W8MCBMS', 'B0AUSTRAL1', 'B0NOQUOTE1', 'B0PATHPRE1'], 'gp/product ASINs extracted, uppercased, deduped; dp/foreign host/query+fragment prefix/too-long/too-short ignored');
+assert_true($gm->invoke(null, '') === [], 'empty content -> no gp/product ASINs');
+
 // ============ D) routes register without fatal ================================
 $GLOBALS['mtb_routes'] = [];
 $checker->register_routes();

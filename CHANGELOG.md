@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.5
+
+- Verfügbarkeitsprüfung erfasst auch Amazon-Links im Format `/gp/product/ASIN` (bisher nur `/dp/`); 31 Produkte in 10 Beiträgen wurden dadurch nie geprüft (S-11806). Audit-Status und Speichern bleiben unverändert.
+
 ## 0.4.4
 
 - Karten, Bilder und Inline-Links auf HTTP/HTTPS begrenzen; Editor-Inline-Links sicher per DOM erzeugen.
