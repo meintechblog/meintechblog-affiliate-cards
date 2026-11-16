@@ -299,6 +299,32 @@ final class MTB_Affiliate_Plugin {
                 </form>
         </div>
         <?php
+        $this->render_save_only_when_changed_script();
+    }
+
+    /** Speichern bleibt ausgegraut, bis sich im Formular etwas geändert hat (UX-Regel 22); ohne Skript wie bisher. */
+    private function render_save_only_when_changed_script(): void {
+        ?>
+        <script>
+        (function() {
+            document.querySelectorAll('.wrap form[action="options.php"]').forEach(function(form) {
+                var buttons = form.querySelectorAll('[type="submit"]');
+                if (!buttons.length) return;
+                var snapshot = function() { return new URLSearchParams(new FormData(form)).toString(); };
+                var start = snapshot();
+                var check = function() {
+                    var changed = snapshot() !== start;
+                    buttons.forEach(function(button) { button.disabled = !changed; });
+                };
+                ['input', 'change', 'focusout', 'keydown', 'pointerover'].forEach(function(type) {
+                    form.addEventListener(type, check);
+                });
+                window.addEventListener('pageshow', check);
+                check();
+            });
+        })();
+        </script>
+        <?php
     }
 
     private function render_audit_tab(): void {
@@ -499,6 +525,7 @@ final class MTB_Affiliate_Plugin {
         })();
         </script>
         <?php
+        $this->render_save_only_when_changed_script();
     }
 
     public function handle_audit_admin_post(): void {
